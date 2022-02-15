@@ -19,5 +19,14 @@ For more information on how to this works with other frontends/backends, head ov
 
 # Getting started
 
-> npm install, npm start, etc.
+Copy .env.example to actual .env file
+> cp .env.example .env
 
+Change the bolt_dsn value if needed to connect to the correct database
+> BOLT_DSN=bolt://neo4j:test@localhost
+
+Install dependencies:
+> composer install
+
+Run app:
+> php artisan serve
