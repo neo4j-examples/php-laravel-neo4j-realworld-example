@@ -2,8 +2,7 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
 
 class ArticlesIntegrationTest extends TestCase
@@ -28,28 +27,13 @@ class ArticlesIntegrationTest extends TestCase
         ]);
 
         $response->assertStatus(201);
-        $response->assertJson([
-            "article" => [
-//                "slug" => "string",
-                "title" => "Test article",
-                "description" => "Simple description",
-                "body" => "This is a short blogpost about testing",
-                "tagList" => [
-                    "test",
-                    "ignore"
-                ],
-//                "createdAt" => "2022-02-02T16:32:41.898Z",
-//                "updatedAt" => "2022-02-02T16:32:41.899Z",
-//                "favorited" => true,
-//                "favoritesCount" => 0,
-//                "author" => [
-//                  "username" => "string",
-//                  "bio" => "string",
-//                  "image" => "string",
-//                  "following" => true
-//                ],
-              ]
-            ]
-        );
+        $response->assertJson(static function (AssertableJson $json) {
+            $json->where('article.title', 'Test article')
+                ->where('article.description', 'Simple description')
+                ->where('article.body', 'This is a short blogpost about testing')
+                ->where('article.tagList', ['test', 'ignore'])
+                ->whereType('article.createdAt', 'string')
+                ->whereType('article.updatedAt', 'string');
+        });
     }
 }
