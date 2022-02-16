@@ -33,7 +33,14 @@ class ArticlesIntegrationTest extends TestCase
                 ->where('article.body', 'This is a short blogpost about testing')
                 ->where('article.tagList', ['test', 'ignore'])
                 ->whereType('article.createdAt', 'string')
-                ->whereType('article.updatedAt', 'string');
+                ->whereType('article.updatedAt', 'string')
+                ->where('article.slug', 'test-article')
+                ->where('article.favorited', false)
+                ->where('article.favoritesCount', 0)
+                ->where('author.username', 'bob')
+                ->where('author.bio', 'programming "cewebrity", missing my girl alice, morning person')
+                ->where('author.image', '/bob.png')
+                ->where('author.following', false);
         });
     }
 }
