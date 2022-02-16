@@ -28,7 +28,7 @@ class ArticlesIntegrationTest extends TestCase
         ]);
 
         $response->assertStatus(201);
-        $response->assertJson([
+        $response->assertSimilarJson([
             "article" => [
 //                "slug" => "string",
                 "title" => "Test article",
@@ -38,8 +38,8 @@ class ArticlesIntegrationTest extends TestCase
                     "test",
                     "ignore"
                 ],
-//                "createdAt" => "2022-02-02T16:32:41.898Z",
-//                "updatedAt" => "2022-02-02T16:32:41.899Z",
+                "createdAt" => "2022-02-02T16:32:41.898Z",
+                "updatedAt" => "2022-02-02T16:32:41.899Z",
 //                "favorited" => true,
 //                "favoritesCount" => 0,
 //                "author" => [
