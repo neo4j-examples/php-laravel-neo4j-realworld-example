@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Laudis\Neo4j\Basic\Session;
 use function response;
 
+/**
+ * @todo show github link
+ * @todo update driver to new beta
+ * @todo implement slugging
+ * @todo implement article controller
+ */
 class ArticleController extends Controller
 {
     private Session $session;
