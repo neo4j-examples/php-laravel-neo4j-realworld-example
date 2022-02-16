@@ -2,13 +2,17 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Collection;
 use Illuminate\Testing\Fluent\AssertableJson;
+use Laudis\Neo4j\Basic\Session;
 use Tests\TestCase;
 
 class ArticlesIntegrationTest extends TestCase
 {
     public function testCreateArticle(): void
     {
+        $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
+
         $response = $this->postJson('/api/articles', [
             'article' => [
                 'title' => 'Test article',
@@ -26,13 +30,46 @@ class ArticlesIntegrationTest extends TestCase
             $json->where('article.title', 'Test article')
                 ->where('article.description', 'Simple description')
                 ->where('article.body', 'This is a short blogpost about testing')
-                ->where('article.tagList', ['test', 'ignore'])
+                ->where('article.tagList', function (Collection $x) {
+                    self::assertEqualsCanonicalizing(['ignore', 'test'], $x->toArray());
+
+                    return true;
+                })
                 ->whereType('article.createdAt', 'string')
                 ->whereType('article.updatedAt', 'string')
                 ->where('article.slug', 'test-article')
                 ->where('article.favorited', false)
                 ->where('article.favoritesCount', 0)
-                ->where('author.username', 'bob')
+                ->where('article.author.username', 'bob')
+                ->where('article.author.bio', 'programming "cewebrity", missing my girl alice, morning person')
+                ->where('article.author.image', '/bob.png')
+                ->where('article.author.following', false);
+        });
+    }
+
+    /**
+     * @depends testCreateArticle
+     */
+    public function testGetArticle(): void
+    {
+        $response = $this->get('/api/articles/test-article');
+
+        $response->assertStatus(200);
+        $response->assertJson(static function (AssertableJson $json) {
+            $json->where('article.title', 'Test article')
+                ->where('article.description', 'Simple description')
+                ->where('article.body', 'This is a short blogpost about testing')
+                ->where('article.tagList', function (Collection $x) {
+                    self::assertEqualsCanonicalizing(['ignore', 'test'], $x->toArray());
+
+                    return true;
+                })
+                ->whereType('article.createdAt', 'string')
+                ->whereType('article.updatedAt', 'string')
+                ->where('article.slug', 'test-article')
+                ->where('article.favorited', false)
+                ->where('article.favoritesCount', 0)
+                ->where('article.author.username', 'bob')
                 ->where('article.author.bio', 'programming "cewebrity", missing my girl alice, morning person')
                 ->where('article.author.image', '/bob.png')
                 ->where('article.author.following', false);
@@ -51,7 +88,11 @@ class ArticlesIntegrationTest extends TestCase
             $json->where('articles.0.title', 'Test article')
                 ->where('articles.0.description', 'Simple description')
                 ->where('articles.0.body', 'This is a short blogpost about testing')
-                ->where('articles.0.tagList', ['test', 'ignore'])
+                ->where('articles.0.tagList', function (Collection $x) {
+                    self::assertEqualsCanonicalizing(['ignore', 'test'], $x->toArray());
+
+                    return true;
+                })
                 ->whereType('articles.0.createdAt', 'string')
                 ->whereType('articles.0.updatedAt', 'string')
                 ->where('articles.0.slug', 'test-article')
@@ -70,8 +111,10 @@ class ArticlesIntegrationTest extends TestCase
      */
     public function testPutArticle(): void
     {
-        $response = $this->put('/api/articles/test-article', [
-            'body' => 'This is a short blogpost about testing and developing. EDIT: extended about section.'
+        $response = $this->putJson('/api/articles/test-article', [
+            'article' => [
+                'body' => 'This is a short blogpost about testing and developing. EDIT: extended about section.'
+            ]
         ]);
 
         $response->assertStatus(200);
@@ -79,13 +122,17 @@ class ArticlesIntegrationTest extends TestCase
             $json->where('article.title', 'Test article')
                 ->where('article.description', 'Simple description')
                 ->where('article.body', 'This is a short blogpost about testing and developing. EDIT: extended about section.')
-                ->where('article.tagList', ['test', 'ignore'])
+                ->where('article.tagList', function (Collection $x) {
+                    self::assertEqualsCanonicalizing(['ignore', 'test'], $x->toArray());
+
+                    return true;
+                })
                 ->whereType('article.createdAt', 'string')
                 ->whereType('article.updatedAt', 'string')
                 ->where('article.slug', 'test-article')
                 ->where('article.favorited', false)
                 ->where('article.favoritesCount', 0)
-                ->where('author.username', 'bob')
+                ->where('article.author.username', 'bob')
                 ->where('article.author.bio', 'programming "cewebrity", missing my girl alice, morning person')
                 ->where('article.author.image', '/bob.png')
                 ->where('article.author.following', false);
@@ -111,7 +158,7 @@ class ArticlesIntegrationTest extends TestCase
     }
 
     /**
-     * @depends testCreateArticle
+     * @depends testDelete
      */
     public function testGetDeleted(): void
     {
