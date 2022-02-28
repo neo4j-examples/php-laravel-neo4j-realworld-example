@@ -3,21 +3,13 @@
 namespace App\Http\Controllers;
 
 use Exception;
-use Http\Discovery\Exception\NotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Laudis\Neo4j\Basic\Session;
 use Laudis\Neo4j\Types\CypherMap;
-use Laudis\Neo4j\Types\Map;
 use function response;
 
-/**
- * @todo show github link
- * @todo update driver to new beta
- * @todo implement slugging
- * @todo implement article controller
- */
 class ArticleController extends Controller
 {
     private Session $session;
