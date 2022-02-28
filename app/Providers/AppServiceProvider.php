@@ -2,9 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 use Laudis\Neo4j\Basic\Driver;
 use Laudis\Neo4j\Basic\Session;
+use function str_replace;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,6 +23,18 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(Session::class, static function() {
             return Driver::create('bolt://neo4j:test@localhost')->createSession();
+        });
+
+        Auth::viaRequest('jwt', static function (Request $request) {
+             $token = $request->header('Authorization', null);
+
+             if ($token === null) {
+                 return null;
+             }
+
+             $token = (array) JWT::decode(str_replace('Bearer ', '', $token), new Key(env('APP_KEY'), 'HS256'));
+
+             return new User($token);
         });
     }
 

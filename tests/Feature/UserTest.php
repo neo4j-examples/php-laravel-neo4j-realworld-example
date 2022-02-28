@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Support\Collection;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laudis\Neo4j\Basic\Session;
 use Tests\TestCase;
@@ -16,12 +15,22 @@ final class UserTest extends TestCase
         $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
 
         $response = $this->postJson('/api/users', [
-            'username' => 'bob',
-            'email' => 'bob.ross@gmail.com',
-            'password' => '123456'
+            'user' => [
+                'username' => 'bob',
+                'email' => 'bob.ross@gmail.com',
+                'password' => '123456'
+            ]
         ]);
 
         $response->assertStatus(201);
+
+        $response->assertJson(static function (AssertableJson $json) {
+            $json->where('user.email', 'bob.ross@gmail.com')
+                ->has('user.token')
+                ->where('user.username', 'bob')
+                ->where('user.bio', '')
+                ->where('user.image', '');
+        });
     }
 
     /**
@@ -30,8 +39,10 @@ final class UserTest extends TestCase
     public function testLogin(): void
     {
         $response = $this->postJson('/api/users/login', [
-            'email' => 'bob.ross@gmail.com',
-            'password' => '123456'
+            'user' => [
+                'email' => 'bob.ross@gmail.com',
+                'password' => '123456'
+            ],
         ]);
 
         $response->assertStatus(200);
@@ -44,7 +55,7 @@ final class UserTest extends TestCase
                 ->where('user.image', '');
         });
 
-        self::$token = $response->json('user.token');
+        self::$token = 'Bearer ' . $response->json('user.token');
     }
 
     /**
@@ -62,6 +73,8 @@ final class UserTest extends TestCase
                 ->where('user.username', 'bob')
                 ->where('user.bio', '')
                 ->where('user.image', '');
+
+            self::assertNotEquals($json->toArray()['user']['token'], self::$token);
         });
     }
 
@@ -71,11 +84,13 @@ final class UserTest extends TestCase
     public function testPutUser(): void
     {
         $response = $this->putJson('/api/user', [
-            'email' => 'bob.ross@gmail.com',
-            'token' => self::$token,
-            'username' => 'bob',
-            'bio' => 'programming "cewebrity", missing my girl alice, morning person',
-            'image' => '/bob.png'
+            'user' => [
+                'email' => 'bob.ross@gmail.com',
+                'token' => self::$token,
+                'username' => 'bob',
+                'bio' => 'programming "cewebrity", missing my girl alice, morning person',
+                'image' => '/bob.png'
+            ]
         ], ['Authorization' => self::$token]);
 
         $response->assertStatus(200);
@@ -83,7 +98,7 @@ final class UserTest extends TestCase
         $response->assertJson(static function (AssertableJson $json) {
             $json->where('user.email', 'bob.ross@gmail.com')
                 ->has('user.token')
-                ->where('user.username', 'Bob')
+                ->where('user.username', 'bob')
                 ->where('user.bio', 'programming "cewebrity", missing my girl alice, morning person')
                 ->where('user.image', '/bob.png');
         });

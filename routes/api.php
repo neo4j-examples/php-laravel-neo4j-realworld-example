@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,4 +26,11 @@ Route::controller(ArticleController::class)->group(function () {
     Route::get('/articles/{slug}', 'getArticle');
     Route::put('/articles/{slug}', 'updateArticle');
     Route::delete('/articles/{slug}', 'deleteArticle');
+});
+
+Route::controller(UserController::class)->group(function () {
+    Route::post('/users/login', 'login');
+    Route::post('/users', 'create');
+    Route::get('/user', 'get');
+    Route::put('/user', 'update');
 });
