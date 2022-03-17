@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Laudis\Neo4j\Basic\Session;
+use function auth;
 use function env;
 use function response;
 use function str_replace;
@@ -40,17 +42,6 @@ final class UserController extends Controller
         return $this->userResponseFromArray($user);
     }
 
-    private function userFromRequest(Request $request): ?array
-    {
-        $token = $request->header('Authorization', null);
-
-        if ($token === null) {
-            return null;
-        }
-
-        return (array) JWT::decode(str_replace('Bearer ', '', $token), new Key(env('APP_KEY'), 'HS256'));
-    }
-
     public function create(Request $request): JsonResponse
     {
         $user = $request->json('user');
@@ -74,18 +65,16 @@ final class UserController extends Controller
     public function update(Request $request)
     {
         $requestedUser = $request->json('user');
-        $actualUser = $this->userFromRequest($request);
-        if ($actualUser !== null) {
-            $actualUser = (array)$actualUser['user'];
-        }
 
-        if ($actualUser === null ||
-            (isset($requestedUser['email']) && $actualUser['email'] !== $requestedUser['email'])
-        ) {
+        /** @var User|null $authenticatable */
+        $authenticatable = auth()->user();
+        if ($authenticatable === null ||
+            (isset($requestedUser['email']) && $authenticatable->getAuthIdentifier() !== $requestedUser['email']))
+        {
             return response()->json()->setStatusCode(401);
         }
 
-        $user = array_merge($actualUser, $requestedUser);
+        $user = array_merge((array) $authenticatable->getAttribute('user'), $requestedUser);
         $this->session->run(<<<'CYPHER'
         MATCH (u:User {email: $email})
         SET u.username = $username,
@@ -96,9 +85,9 @@ final class UserController extends Controller
         return $this->userResponseFromArray($user);
     }
 
-    public function get(Request $request)
+    public function get()
     {
-        $user = $this->userFromRequest($request);
+        $user = auth()->user();
         if ($user === null) {
             return response()->json()->setStatusCode(401);
         }

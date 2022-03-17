@@ -34,7 +34,10 @@ class AppServiceProvider extends ServiceProvider
 
              $token = (array) JWT::decode(str_replace('Bearer ', '', $token), new Key(env('APP_KEY'), 'HS256'));
 
-             return new User($token);
+             $user = new User();
+             $user->setRawAttributes($token);
+
+             return $user;
         });
     }
 
