@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\SlugGenerator;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,19 +14,21 @@ use function response;
 class ArticleController extends Controller
 {
     private Session $session;
+    private SlugGenerator $slugGenerator;
 
-    public function __construct(Session $session)
+    public function __construct(Session $session, SlugGenerator $slugGenerator)
     {
         $this->session = $session;
+        $this->slugGenerator = $slugGenerator;
     }
 
     public function listArticles(Request $request): JsonResponse
     {
         $result = $this->session->run(<<<'CYPHER'
-        MATCH (a:Article)
+        MATCH (a:Article) <- [:AUTHORED] - (u:User)
         OPTIONAL MATCH (a) - [:TAGGED] -> (t:Tag)
-        WITH a, [x IN collect(t) | x.name] AS tags
-        RETURN a{.title, .description, .body, tagList: tags, .createdAt, .updatedAt, .slug}
+        WITH a, [x IN collect(t) | x.name] AS tags, u
+        RETURN a{.title, .description, .body, tagList: tags, .createdAt, .updatedAt, .slug, author: {email: u.email, username: u.username, bio: u.bio, image: u.image, following: false}}
         CYPHER);
 
         $article = $result->map(function (CypherMap $article) {
@@ -41,10 +44,10 @@ class ArticleController extends Controller
     public function getArticle(Request $request, string $slug): JsonResponse
     {
         $result = $this->session->run(<<<'CYPHER'
-        MATCH (a:Article {slug: $slug})
+        MATCH (a:Article {slug: $slug}) <- [:AUTHORED] - (u:User)
         OPTIONAL MATCH (a) - [:TAGGED] -> (t:Tag)
-        WITH a, [x IN collect(t) | x.name] AS tags
-        RETURN a{.title, .description, .body, tagList: tags, .createdAt, .updatedAt, .slug}
+        WITH a, [x IN collect(t) | x.name] AS tags, u
+        RETURN a{.title, .description, .body, tagList: tags, .createdAt, .updatedAt, .slug, author: {email: u.email, username: u.username, bio: u.bio, image: u.image, following: false}}
         CYPHER, ['slug' => $slug]);
 
         if ($result->isEmpty()) {
@@ -57,15 +60,20 @@ class ArticleController extends Controller
 
     public function createArticle(Request $request): JsonResponse
     {
-        $article = $request->json('article');
-        $article['slug'] = Str::slug($article['title']);
-        $article['tagList'] ??= [];
+        $email = optional(auth()->user())->getAuthIdentifier();
+        $params = $request->json('article');
+        $params['email'] = $email;
+        $params['slug'] = $this->slugGenerator->generateSlug('Article', $params['title']);
+
+        $params['tagList'] ??= [];
 
         $tsx = $this->session->beginTransaction();
 
         $tsx->run(<<<'CYPHER'
+        MATCH (u:User {email: $email})
         CREATE (article:Article {title: $title, description: $description, body: $body, createdAt: datetime(), updatedAt: datetime(), slug: $slug})
-        CYPHER, $article);
+        CREATE (u) - [:AUTHORED] -> (article)
+        CYPHER, $params);
 
         $tsx->run(<<<'CYPHER'
         MATCH (article:Article {slug: $slug})
@@ -73,11 +81,11 @@ class ArticleController extends Controller
         MERGE (t:Tag {name: tag})
         WITH article, t
         MERGE (article) - [:TAGGED] -> (t)
-        CYPHER, $article);
+        CYPHER, $params);
 
         $tsx->commit();
 
-        return $this->getArticle($request, $article['slug'])->setStatusCode(201);
+        return $this->getArticle($request, $params['slug'])->setStatusCode(201);
     }
 
     public function deleteArticle(Request $request, string $slug): JsonResponse
@@ -115,12 +123,7 @@ class ArticleController extends Controller
 
         $tbr['favorited'] = false;
         $tbr['favoritesCount'] = 0;
-        $tbr['author'] = [
-            'username' => 'bob',
-            'bio' => 'programming "cewebrity", missing my girl alice, morning person',
-            'image' => '/bob.png',
-            'following' => false
-        ];
+        $tbr['author'] = $tbr['author']->toArray();
 
         return $tbr;
     }

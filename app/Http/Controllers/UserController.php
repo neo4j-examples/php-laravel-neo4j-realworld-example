@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,7 +11,6 @@ use Laudis\Neo4j\Basic\Session;
 use function auth;
 use function env;
 use function response;
-use function str_replace;
 use function time;
 
 final class UserController extends Controller

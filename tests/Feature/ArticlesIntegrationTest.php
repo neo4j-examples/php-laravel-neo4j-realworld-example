@@ -4,26 +4,55 @@ namespace Tests\Feature;
 
 use Illuminate\Support\Collection;
 use Illuminate\Testing\Fluent\AssertableJson;
+use Illuminate\Testing\TestResponse;
 use Laudis\Neo4j\Basic\Session;
 use Tests\TestCase;
 
 class ArticlesIntegrationTest extends TestCase
 {
-    public function testCreateArticle(): void
+    private static ?string $token = null;
+
+    /**
+     * @doesNotPerformAssertions
+     */
+    public function testCreateUser(): void
     {
         $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
 
-        $response = $this->postJson('/api/articles', [
-            'article' => [
-                'title' => 'Test article',
-                'description' => 'Simple description',
-                'body' => 'This is a short blogpost about testing',
-                'tagList' => [
-                    'test',
-                    'ignore'
-                ]
+        $this->postJson('/api/users', [
+            'user' => [
+                'username' => 'bob',
+                'email' => 'bob.ross@gmail.com',
+                'password' => '123456'
             ]
         ]);
+
+        $response = $this->postJson('/api/users/login', [
+            'user' => [
+                'email' => 'bob.ross@gmail.com',
+                'password' => '123456'
+            ],
+        ]);
+
+        self::$token = 'Bearer ' . $response->json('user.token');
+
+        $this->putJson('/api/user', [
+            'user' => [
+                'email' => 'bob.ross@gmail.com',
+                'token' => self::$token,
+                'username' => 'bob',
+                'bio' => 'programming "cewebrity", missing my girl alice, morning person',
+                'image' => '/bob.png'
+            ]
+        ], ['Authorization' => self::$token]);
+    }
+
+    /**
+     * @depends testCreateUser
+     */
+    public function testCreateArticle(): void
+    {
+        $response = $this->createTestArticle();
 
         $response->assertStatus(201);
         $response->assertJson(static function (AssertableJson $json) {
@@ -165,5 +194,61 @@ class ArticlesIntegrationTest extends TestCase
         $response = $this->get('/api/articles/test-article');
 
         $response->assertStatus(404);
+    }
+
+    /**
+     * @depends testGetDeleted
+     */
+    public function testMultipleCreations(): void
+    {
+        $response1 = $this->createTestArticle();
+        $response2 = $this->createTestArticle();
+        $response3 = $this->createTestArticle();
+        $response4 = $this->createTestArticle();
+        $response5 = $this->createTestArticle();
+
+        self::assertEquals('test-article', $response1->json('article.slug'));
+        self::assertEquals('test-article-1', $response2->json('article.slug'));
+        self::assertEquals('test-article-2', $response3->json('article.slug'));
+        self::assertEquals('test-article-3', $response4->json('article.slug'));
+        self::assertEquals('test-article-4', $response5->json('article.slug'));
+    }
+
+    /**
+     * @depends testGetDeleted
+     */
+    public function testCreateOtherArticle(): void
+    {
+        $response = $this->postJson('/api/articles', [
+            'article' => [
+                'title' => 'New article',
+                'description' => 'Other description',
+                'body' => 'Test if slug gets generated correctly',
+                'tagList' => [
+                    'test',
+                ]
+            ]
+        ], [
+            'Authorization' => self::$token
+        ]);
+
+        self::assertEquals('new-article', $response->json('article.slug'));
+    }
+
+    private function createTestArticle(): TestResponse
+    {
+        return $this->postJson('/api/articles', [
+            'article' => [
+                'title' => 'Test article',
+                'description' => 'Simple description',
+                'body' => 'This is a short blogpost about testing',
+                'tagList' => [
+                    'test',
+                    'ignore'
+                ]
+            ]
+        ], [
+            'Authorization' => self::$token
+        ]);
     }
 }
