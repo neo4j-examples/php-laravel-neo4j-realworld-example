@@ -49,15 +49,32 @@ class CommentController extends Controller
         $parameters = [
             'slug' => $slug,
             'comment' => $request->json('comment'),
-            'email' => optional(auth()->user())->email
+            'email' => $authenticatable->getAuthIdentifier()
         ];
 
-        $this->session->run(<<<'CYPHER'
+        $result = $this->session->run(<<<'CYPHER'
         MATCH (a:Article {slug: $slug}), (u:User {email: $email})
-        CREATE (a) <- [:COMMENTED_ON] - (c:Comment {id: 0, createdAt: datetime(), updatedAt: datetime(), body: comment['body']}) <- [:AUTHORED] - (u)
-        CYPHER, $parameters);
+        CREATE (a) <- [:COMMENTED_ON] - (c:Comment {id: 0, createdAt: datetime(), updatedAt: datetime(), body: $comment['body']}) <- [:AUTHORED] - (u)
+        RETURN c, u
+        CYPHER, $parameters)->getAsCypherMap(0);
 
-        return $this->getComments($request, $slug);
+        $comment = $result->getAsNode('c')->getProperties();
+        $user = $result->getAsNode('u')->getProperties();
+
+        return response()->json([
+            'comment' => [
+                'id' => $comment->get('id'),
+                'createdAt' => $comment->get('createdAt')->toDateTime()->format(DATE_ATOM),
+                'updatedAt' => $comment->get('updatedAt')->toDateTime()->format(DATE_ATOM),
+                'body' => $comment->get('body'),
+                'author' => [
+                    'username' => $user->get('username'),
+                    'bio' => $user->get('bio'),
+                    'image' => $user->get('image'),
+                    'following' => false,
+                ]
+            ]
+        ]);
     }
 
     public function uncomment(Request $request, string $slug, int $id): JsonResponse
@@ -70,7 +87,7 @@ class CommentController extends Controller
 
         $parameters = [
             'slug' => $slug,
-            'email' => optional(auth()->user())->email,
+            'email' => $authenticatable->getAuthIdentifier(),
             'id' => $id
         ];
 
