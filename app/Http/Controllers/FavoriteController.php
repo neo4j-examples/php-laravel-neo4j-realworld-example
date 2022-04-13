@@ -30,7 +30,7 @@ class FavoriteController extends Controller
 
         $parameters = [
             'slug' => $slug,
-            'email' => $authenticatable->getAttribute('email')
+            'email' => $authenticatable->getAttribute('user')->email
         ];
 
         $this->session->run(<<<'CYPHER'
@@ -51,7 +51,7 @@ class FavoriteController extends Controller
 
         $parameters = [
             'slug' => $slug,
-            'email' => $authenticatable->getAttribute('email')
+            'email' => $authenticatable->getAttribute('user')->email
         ];
 
         $this->session->run(<<<'CYPHER'

@@ -121,8 +121,21 @@ class ArticleController extends Controller
         $tbr['createdAt'] = $article->getAsDateTime('createdAt')->toDateTime()->format('Y-m-d H:i:s.v') . 'Z';
         $tbr['updatedAt'] = $article->getAsDateTime('updatedAt')->toDateTime()->format('Y-m-d H:i:s.v') . 'Z';
 
-        $tbr['favorited'] = false;
-        $tbr['favoritesCount'] = 0;
+        $favorites = $this->session->run(<<<'CYPHER'
+        MATCH (a:Article {slug: $slug})
+        OPTIONAL MATCH (a) <- [:FAVORITES] - (u:User {email: $email})
+        WITH a, u
+        MATCH (a) <- [:FAVORITES] - (o:User)
+        RETURN a, u IS NOT NULL AS favorited, count(o) AS count
+        CYPHER, ['slug' => $tbr['slug'], 'email' => optional(auth()->user())->getAuthIdentifier()]);
+
+        if ($favorites->isEmpty()) {
+            $tbr['favorited'] = false;
+            $tbr['favoritesCount'] = 0;
+        } else {
+            $tbr['favorited'] = $favorites->first()['favorited'];
+            $tbr['favoritesCount'] = $favorites->first()['count'];
+        }
         $tbr['author'] = $tbr['author']->toArray();
 
         return $tbr;
