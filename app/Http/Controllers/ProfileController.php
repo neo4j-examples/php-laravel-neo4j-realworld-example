@@ -19,10 +19,10 @@ class ProfileController extends Controller
         $this->session = $session;
     }
 
-    public function getProfile(Request $request): JsonResponse
+    public function getProfile(Request $request, string $username): JsonResponse
     {
         $parameters = [
-            'username' => $request->get('username'),
+            'username' => $username,
             'email' => optional(auth()->user())->email
         ];
 
@@ -35,7 +35,7 @@ class ProfileController extends Controller
         return $this->profileResponseFromArray($result);
     }
 
-    public function followProfile(Request $request): JsonResponse
+    public function followProfile(Request $request, string $username): JsonResponse
     {
         /** @var User|null $authenticatable */
         $authenticatable = auth()->user();
@@ -44,7 +44,7 @@ class ProfileController extends Controller
         }
 
         $parameters = [
-            'username' => $request->get('username'),
+            'username' => $username,
             'email' => $authenticatable->getAttribute('email')
         ];
 
@@ -57,7 +57,7 @@ class ProfileController extends Controller
         return $this->profileResponseFromArray($result);
     }
 
-    public function unfollowProfile(Request $request): JsonResponse
+    public function unfollowProfile(Request $request, string $username): JsonResponse
     {
         /** @var User|null $authenticatable */
         $authenticatable = auth()->user();
@@ -66,7 +66,7 @@ class ProfileController extends Controller
         }
 
         $parameters = [
-            'username' => $request->get('username'),
+            'username' => $username,
             'email' => $authenticatable->getAttribute('email')
         ];
 
@@ -75,7 +75,7 @@ class ProfileController extends Controller
         DELETE f
         CYPHER, $parameters);
 
-        return $this->getProfile($request);
+        return $this->getProfile($request, $username);
     }
 
     /**

@@ -47,7 +47,7 @@ Route::controller(ProfileController::class)->group(function () {
 Route::controller(CommentController::class)->group(function () {
     Route::get('/articles/{slug}/comments', 'getComments');
     Route::post('/articles/{slug}/comments', 'comment');
-    Route::delete('/articles/{slug}/comments/id', 'uncomment');
+    Route::delete('/articles/{slug}/comments/{id}', 'uncomment');
 });
 
 Route::controller(FavoriteController::class)->group(function () {

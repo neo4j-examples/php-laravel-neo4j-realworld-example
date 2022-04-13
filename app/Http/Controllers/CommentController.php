@@ -22,10 +22,10 @@ class CommentController extends Controller
         $this->session = $session;
     }
 
-    public function getComments(Request $request): JsonResponse
+    public function getComments(Request $request, string $slug): JsonResponse
     {
         $parameters = [
-            'slug' => $request->get('slug'),
+            'slug' => $slug,
             'email' => optional(auth()->user())->email
         ];
 
@@ -38,7 +38,7 @@ class CommentController extends Controller
         return $this->commentResponseFromArray($result);
     }
 
-    public function comment(Request $request): JsonResponse
+    public function comment(Request $request, string $slug): JsonResponse
     {
         /** @var User|null $authenticatable */
         $authenticatable = auth()->user();
@@ -47,7 +47,7 @@ class CommentController extends Controller
         }
 
         $parameters = [
-            'slug' => $request->get('slug'),
+            'slug' => $slug,
             'comment' => $request->json('comment'),
             'email' => optional(auth()->user())->email
         ];
@@ -57,10 +57,10 @@ class CommentController extends Controller
         CREATE (a) <- [:COMMENTED_ON] - (c:Comment {id: 0, createdAt: datetime(), updatedAt: datetime(), body: comment['body']}) <- [:AUTHORED] - (u)
         CYPHER, $parameters);
 
-        return $this->getComments($request);
+        return $this->getComments($request, $slug);
     }
 
-    public function uncomment(Request $request): JsonResponse
+    public function uncomment(Request $request, string $slug, int $id): JsonResponse
     {
         /** @var User|null $authenticatable */
         $authenticatable = auth()->user();
@@ -69,9 +69,9 @@ class CommentController extends Controller
         }
 
         $parameters = [
-            'slug' => $request->get('slug'),
+            'slug' => $slug,
             'email' => optional(auth()->user())->email,
-            'id' => $request->get('id')
+            'id' => $id
         ];
 
         $this->session->run(<<<'CYPHER'
