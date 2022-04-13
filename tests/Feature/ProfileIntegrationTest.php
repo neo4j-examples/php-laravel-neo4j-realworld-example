@@ -10,9 +10,6 @@ class ProfileIntegrationTest extends TestCase
 {
     private static ?string $token = null;
 
-    /**
-     * @doesNotPerformAssertions
-     */
     public function testCreateUser(): void
     {
         $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
@@ -31,6 +28,8 @@ class ProfileIntegrationTest extends TestCase
                 'password' => '123456'
             ],
         ]);
+
+        $response->assertStatus(200);
 
         self::$token = 'Bearer ' . $response->json('user.token');
 

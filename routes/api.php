@@ -40,7 +40,7 @@ Route::controller(UserController::class)->group(function () {
 
 Route::controller(ProfileController::class)->group(function () {
     Route::get('/profiles/{username}', 'getProfile');
-    Route::post('/profiles/{username}/follow', 'followProfile');
+    Route::post('/profiles/{username}/follow', 'followProfile')->middleware('auth');
     Route::delete('/profiles/{username}/follow', 'unfollowProfile');
 });
 

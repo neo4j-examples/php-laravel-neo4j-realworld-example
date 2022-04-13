@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\UserModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Laudis\Neo4j\Basic\Session;
@@ -22,7 +22,7 @@ class FavoriteController extends Controller
 
     public function favorite(Request $request, string $slug): JsonResponse
     {
-        /** @var User|null $authenticatable */
+        /** @var UserModel|null $authenticatable */
         $authenticatable = auth()->user();
         if ($authenticatable === null) {
             return response()->json()->setStatusCode(401);
@@ -43,7 +43,7 @@ class FavoriteController extends Controller
 
     public function unfavorite(Request $request, string $slug): JsonResponse
     {
-        /** @var User|null $authenticatable */
+        /** @var UserModel|null $authenticatable */
         $authenticatable = auth()->user();
         if ($authenticatable === null) {
             return response()->json()->setStatusCode(401);

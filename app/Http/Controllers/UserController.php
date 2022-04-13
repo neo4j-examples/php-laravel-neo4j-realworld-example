@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\UserModel;
+use App\UserJSONPresenter;
+use App\UserRepository;
 use Firebase\JWT\JWT;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,124 +17,52 @@ use function time;
 
 final class UserController extends Controller
 {
-    private Session $session;
-
-    public function __construct(Session $session)
+    public function __construct(
+        private readonly UserRepository $repository,
+        private readonly UserJSONPresenter $presenter
+    )
     {
-        $this->session = $session;
     }
 
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->json('user');
 
-        $user = $this->session->run(<<<'CYPHER'
-        MATCH (u:User {email: $email}) RETURN u
-        CYPHER, $credentials)
-            ->getAsCypherMap(0)
-            ->getAsNode('u')
-            ->getProperties();
+        $user = $this->repository->findByEmail($credentials['email']);
 
-        if (!Hash::check($credentials['password'], $user['passwordHash'])) {
+        if (!Hash::check($credentials['password'], $user->passwordHash)) {
             return response()->json(['errors' => ['body' => ['Invalid password']]])->setStatusCode(422);
         }
 
-        return $this->userResponseFromArray($user);
+        return response()->json(['user' => $this->presenter->presentAsUser($user)]);
     }
 
     public function create(Request $request): JsonResponse
     {
         $user = $request->json('user');
-        $this->session->run(<<<'CYPHER'
-        CREATE (user:User {
-          email: $email,
-          username: $username,
-          passwordHash: $passwordHash,
-          bio: '',
-          image: ''
-        })
-        CYPHER, [
-            'email' => $user['email'],
-            'username' => $user['username'],
-            'passwordHash' => Hash::make($user['password'])
-        ]);
 
-        return $this->userResponseFromArray($user)->setStatusCode(201);
+        $user = $this->repository->create($user['email'], $user['username'], $user['password']);
+
+        return response()
+            ->json(['user' => $this->presenter->presentAsUser($user)])
+            ->setStatusCode(201);
     }
 
-    public function update(Request $request)
+    public function update(Request $request): JsonResponse
     {
         $requestedUser = $request->json('user');
 
-        /** @var User|null $authenticatable */
+        /** @var UserModel|null $authenticatable */
         $authenticatable = auth()->user();
         if ($authenticatable === null ||
-            (isset($requestedUser['email']) && $authenticatable->getAuthIdentifier() !== $requestedUser['email']))
+            (isset($requestedUser['username']) && $authenticatable->getAuthIdentifier() !== $requestedUser['username']))
         {
             return response()->json()->setStatusCode(401);
         }
 
-        $user = array_merge((array) $authenticatable->getAttribute('user'), $requestedUser);
-        $this->session->run(<<<'CYPHER'
-        MATCH (u:User {email: $email})
-        SET u.username = $username,
-            u.bio = $bio,
-            u.image = $image
-        CYPHER, $user);
+        $user = $this->repository->update('', '' , '', '');
 
-        return $this->userResponseFromArray($user);
-    }
-
-    public function get()
-    {
-        $user = auth()->user();
-        if ($user === null) {
-            return response()->json()->setStatusCode(401);
-        }
-
-        return $this->userResponseFromArray((array) $user['user']);
-    }
-
-    /**
-     * @param $user
-     * @return string
-     */
-    private function createToken($user): string
-    {
-        $key = env('APP_KEY');
-        $payload = array(
-            "iss" => env('APP_URL'),
-            "aud" => env('APP_URL'),
-            "iat" => time(),
-            "nbf" => time(),
-            "exp" => time() + (24 * 60 * 60),
-            "user" => [
-                'email' => $user['email'],
-                'username' => $user['username'],
-                'bio' => $user['bio'] ?? '',
-                'image' => $user['image'] ?? ''
-            ]
-        );
-
-        return JWT::encode($payload, $key, 'HS256');
-    }
-
-    /**
-     * @param $user
-     * @return JsonResponse
-     */
-    private function userResponseFromArray($user): JsonResponse
-    {
-        $jwt = $this->createToken($user);
-
-        return response()->json([
-            'user' => [
-                'email' => $user['email'],
-                'username' => $user['username'],
-                'bio' => $user['bio'] ?? '',
-                'image' => $user['image'] ?? '',
-                'token' => $jwt
-            ]
-        ]);
+        return response()
+            ->json(['user' => $this->presenter->presentAsUser($user)]);
     }
 }

@@ -2,80 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\UserJSONPresenter;
+use App\UserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Laudis\Neo4j\Basic\Session;
 use Laudis\Neo4j\Types\CypherMap;
 use function auth;
 use function response;
 
 class ProfileController extends Controller
 {
-    private Session $session;
-
-    public function __construct(Session $session)
-    {
-        $this->session = $session;
+    public function __construct(
+        private readonly UserRepository $repository,
+        private readonly UserJSONPresenter $presenter
+    ) {
     }
 
     public function getProfile(Request $request, string $username): JsonResponse
     {
-        $parameters = [
-            'username' => $username,
-            'email' => optional(auth()->user())->getAuthIdentifier()
-        ];
+        $user = $this->repository->findByUsername($username);
 
-        $result = $this->session->run(<<<'CYPHER'
-        MATCH (u:User {username: $username})
-        OPTIONAL MATCH (self:User {email: $email}) - [:FOLLOWS] -> (u)
-        RETURN self, u
-        CYPHER, $parameters)->getAsCypherMap(0);
-
-        return $this->profileResponseFromArray($result);
+        return response()->json([
+            'profile' => $this->presenter->presentAsProfile($user)
+        ]);
     }
 
     public function followProfile(Request $request, string $username): JsonResponse
     {
-        /** @var User|null $authenticatable */
-        $authenticatable = auth()->user();
-        if ($authenticatable === null) {
-            return response()->json()->setStatusCode(401);
-        }
+        $user = $this->repository->follow(
+            auth()->user()->getAuthIdentifier(),
+            $username
+        );
 
-        $parameters = [
-            'username' => $username,
-            'email' => $authenticatable->getAuthIdentifier()
-        ];
-
-        $result = $this->session->run(<<<'CYPHER'
-        MATCH (u:User {username: $username}), (self:User {email: $email})
-        MERGE (self) - [:FOLLOWS] -> (u)
-        RETURN self, u
-        CYPHER, $parameters)->getAsCypherMap(0);
-
-        return $this->profileResponseFromArray($result);
+        return response()->json([
+            'profile' => $this->presenter->presentAsProfile($user)
+        ]);
     }
 
     public function unfollowProfile(Request $request, string $username): JsonResponse
     {
-        /** @var User|null $authenticatable */
-        $authenticatable = auth()->user();
-        if ($authenticatable === null) {
-            return response()->json()->setStatusCode(401);
-        }
+        $user = $this->repository->unfollow(
+            auth()->user()->getAuthIdentifier(),
+            $username
+        );
 
-        $parameters = [
-            'username' => $username,
-            'email' => $authenticatable->getAuthIdentifier()
-        ];
-
-        $this->session->run(<<<'CYPHER'
-        MATCH (u:User {username: $username}) <- [f:FOLLOWS] - (self:User {email: $email})
-        DELETE f
-        CYPHER, $parameters);
-
-        return $this->getProfile($request, $username);
+        return response()->json([
+            'profile' => $this->presenter->presentAsProfile($user)
+        ]);
     }
 
     /**

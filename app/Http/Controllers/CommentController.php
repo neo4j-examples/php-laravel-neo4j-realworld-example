@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\UserModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Laudis\Neo4j\Basic\Session;
@@ -40,7 +40,7 @@ class CommentController extends Controller
 
     public function comment(Request $request, string $slug): JsonResponse
     {
-        /** @var User|null $authenticatable */
+        /** @var UserModel|null $authenticatable */
         $authenticatable = auth()->user();
         if ($authenticatable === null) {
             return response()->json()->setStatusCode(401);
@@ -79,7 +79,7 @@ class CommentController extends Controller
 
     public function uncomment(Request $request, string $slug, int $id): JsonResponse
     {
-        /** @var User|null $authenticatable */
+        /** @var UserModel|null $authenticatable */
         $authenticatable = auth()->user();
         if ($authenticatable === null) {
             return response()->json()->setStatusCode(401);

@@ -1,0 +1,5 @@
+- Look at code duplication in profilecontroller and usercontroller
+- use global authentication
+- migrations: indexes, constraints and apoc
+- datetimes
+- validation
