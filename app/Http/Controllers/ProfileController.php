@@ -23,11 +23,11 @@ class ProfileController extends Controller
     {
         $parameters = [
             'username' => $username,
-            'email' => optional(auth()->user())->email
+            'email' => optional(auth()->user())->getAuthIdentifier()
         ];
 
         $result = $this->session->run(<<<'CYPHER'
-        MATCH (u:User {email: $username})
+        MATCH (u:User {username: $username})
         OPTIONAL MATCH (self:User {email: $email}) - [:FOLLOWS] -> (u)
         RETURN self, u
         CYPHER, $parameters)->getAsCypherMap(0);
@@ -45,11 +45,11 @@ class ProfileController extends Controller
 
         $parameters = [
             'username' => $username,
-            'email' => $authenticatable->getAttribute('email')
+            'email' => $authenticatable->getAuthIdentifier()
         ];
 
         $result = $this->session->run(<<<'CYPHER'
-        MATCH (u:User {email: $username}), (self:User {email: $email})
+        MATCH (u:User {username: $username}), (self:User {email: $email})
         MERGE (self) - [:FOLLOWS] -> (u)
         RETURN self, u
         CYPHER, $parameters)->getAsCypherMap(0);
@@ -67,11 +67,11 @@ class ProfileController extends Controller
 
         $parameters = [
             'username' => $username,
-            'email' => $authenticatable->getAttribute('email')
+            'email' => $authenticatable->getAuthIdentifier()
         ];
 
         $this->session->run(<<<'CYPHER'
-        MATCH (u:User {email: $username}) - [f:FOLLOWS] -> (self:User {email: $email})
+        MATCH (u:User {username: $username}) <- [f:FOLLOWS] - (self:User {email: $email})
         DELETE f
         CYPHER, $parameters);
 
