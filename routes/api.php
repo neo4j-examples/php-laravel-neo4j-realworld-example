@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -47,4 +48,9 @@ Route::controller(CommentController::class)->group(function () {
     Route::get('/articles/{slug}/comments', 'getComments');
     Route::post('/articles/{slug}/comments', 'comment');
     Route::delete('/articles/{slug}/comments/id', 'uncomment');
+});
+
+Route::controller(FavoriteController::class)->group(function () {
+    Route::post('/articles/{slug}/favorite', 'favorite');
+    Route::delete('/articles/{slug}/favorite', 'unfavorite');
 });
