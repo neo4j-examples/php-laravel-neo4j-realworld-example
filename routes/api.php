@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -40,4 +41,10 @@ Route::controller(ProfileController::class)->group(function () {
     Route::get('/profiles/{username}', 'getProfile');
     Route::post('/profiles/{username}/follow', 'followProfile');
     Route::delete('/profiles/{username}/follow', 'unfollowProfile');
+});
+
+Route::controller(CommentController::class)->group(function () {
+    Route::get('/articles/{slug}/comments', 'getComments');
+    Route::post('/articles/{slug}/comments', 'comment');
+    Route::delete('/articles/{slug}/comments/id', 'uncomment');
 });

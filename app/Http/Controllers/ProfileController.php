@@ -28,7 +28,7 @@ class ProfileController extends Controller
 
         $result = $this->session->run(<<<'CYPHER'
         MATCH (u:User {email: $username})
-        OPTIONAL MATCH (self:User {email: $email}) - [:Follows] -> (u)
+        OPTIONAL MATCH (self:User {email: $email}) - [:FOLLOWS] -> (u)
         RETURN self, u
         CYPHER, $parameters)->getAsCypherMap(0);
 
@@ -50,7 +50,7 @@ class ProfileController extends Controller
 
         $result = $this->session->run(<<<'CYPHER'
         MATCH (u:User {email: $username}), (self:User {email: $email})
-        MERGE (self) - [:Follows] -> (u)
+        MERGE (self) - [:FOLLOWS] -> (u)
         RETURN self, u
         CYPHER, $parameters)->getAsCypherMap(0);
 
@@ -70,11 +70,10 @@ class ProfileController extends Controller
             'email' => $authenticatable->getAttribute('email')
         ];
 
-        $result = $this->session->run(<<<'CYPHER'
-        MATCH (u:User {email: $username}) - [f:Follows] -> (self:User {email: $email})
+        $this->session->run(<<<'CYPHER'
+        MATCH (u:User {email: $username}) - [f:FOLLOWS] -> (self:User {email: $email})
         DELETE f
-        RETURN self, u
-        CYPHER, $parameters)->getAsCypherMap(0);
+        CYPHER, $parameters);
 
         return $this->getProfile($request);
     }
