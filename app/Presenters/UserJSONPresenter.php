@@ -10,20 +10,17 @@ use function time;
 
 class UserJSONPresenter
 {
-    public function __construct(private readonly UserRepository $repository)
+    public function __construct()
     {
     }
 
-    public function presentAsProfile(User $user): array
+    public function presentAsProfile(User $user, bool $following): array
     {
         return [
             'username' => $user->username,
             'bio' => $user->bio,
             'image' => $user->image,
-            'following' => $this->repository->following(
-                auth()->user()?->getAuthIdentifier() ?? '',
-                $user->username
-            )
+            'following' => $following
         ];
     }
 

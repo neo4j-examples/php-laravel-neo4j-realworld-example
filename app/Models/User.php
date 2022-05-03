@@ -13,4 +13,15 @@ class User
     )
     {
     }
+
+    public static function fromArray(array $array): self
+    {
+        return new self(
+            username: $array['username'],
+            email: $array['email'],
+            bio: $array['bio'],
+            image: $array['image'],
+            passwordHash: $array['passwordHash'],
+        );
+    }
 }
