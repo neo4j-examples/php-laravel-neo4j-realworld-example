@@ -6,6 +6,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Laudis\Neo4j\Basic\Session;
 use Laudis\Neo4j\Databags\SummarizedResult;
+use Laudis\Neo4j\Types\CypherMap;
+use Laudis\Neo4j\Types\Node;
+use PharIo\Manifest\Author;
 use RuntimeException;
 use function array_filter;
 use function array_merge;
@@ -82,14 +85,16 @@ class UserRepository
         return $this->getUserFromResult($result, $usernameB);
     }
 
-    public function following(string $usernameA, string $usernameB): bool
+    public function following(string $user, array $usernames): array
     {
-        $result = $this->session->run(<<<'CYPHER'
-        MATCH (:User {username: $usernameA}) - [:FOLLOWS] -> (:User {username: $usernameB})
-        RETURN true
-        CYPHER, compact('usernameA', 'usernameB'));
-
-        return !$result->isEmpty();
+        return $this->session->run(<<<'CYPHER'
+        MATCH (:User {username: $user}) - [:FOLLOWS] -> (user:User)
+        WHERE user.username IN $usernames
+        RETURN apoc.map.fromPairs(collect([user.username, true])) AS results
+        CYPHER, compact('user', 'usernames'))
+            ->getAsCypherMap(0)
+            ->getAsCypherMap('results')
+            ->toArray();
     }
 
     public function unfollow(string $usernameA, string $usernameB): User
@@ -103,15 +108,44 @@ class UserRepository
         return $this->getUserFromResult($result, $usernameB);
     }
 
+    public function getAuthorFromArticle(array $slugs): array
+    {
+        return $this->session->run(<<<'CYPHER'
+        MATCH (article:Article) <- [:AUTHORED] - (user:User)
+        WHERE article.slug IN $slugs
+        RETURN apoc.map.fromPairs(collect([article.slug, user])) AS results
+        CYPHER, ['slugs' => $slugs])
+            ->getAsCypherMap(0)
+            ->getAsCypherMap('results')
+            ->map($this->mapUser(...))
+            ->toArray();
+    }
+
+    public function getCommentAuthors(array $ids): array
+    {
+        return $this->session->run(<<<'CYPHER'
+        MATCH (c:Comment) <- [:AUTHORED] - (user:User)
+        WHERE c.id IN $ids
+        RETURN apoc.map.fromPairs(collect([c.id, user])) AS results
+        CYPHER, ['ids' => $ids])
+            ->getAsCypherMap(0)
+            ->getAsCypherMap('results')
+            ->map($this->mapUser(...))
+            ->toArray();
+    }
+
     private function getUserFromResult(SummarizedResult $result, string $username): User
     {
         if ($result->isEmpty()) {
             throw new RuntimeException(sprintf('Cannot find user with username: "%s"', $username));
         }
 
-        $user = $result->getAsCypherMap(0)
-            ->getAsNode('u')
-            ->getProperties();
+        return $this->mapUser($result->getAsCypherMap(0)->getAsNode('u'));
+    }
+
+    private function mapUser(Node $node): User
+    {
+        $user = $node->getProperties();
 
         return new User(
             username: $user['username'],
@@ -121,4 +155,5 @@ class UserRepository
             passwordHash: $user['passwordHash']
         );
     }
+
 }

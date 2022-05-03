@@ -6,7 +6,6 @@ use App\Presenters\UserJSONPresenter;
 use App\Repositories\UserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Laudis\Neo4j\Types\CypherMap;
 use function auth;
 use function response;
 
@@ -21,50 +20,28 @@ class ProfileController extends Controller
     public function getProfile(Request $request, string $username): JsonResponse
     {
         $user = $this->repository->findByUsername($username);
+        $following = $this->repository->following(auth()->id() ?? '', $user->username);
 
         return response()->json([
-            'profile' => $this->presenter->presentAsProfile($user)
+            'profile' => $this->presenter->presentAsProfile($user, $following)
         ]);
     }
 
     public function followProfile(Request $request, string $username): JsonResponse
     {
-        $user = $this->repository->follow(
-            auth()->user()?->getAuthIdentifier(),
-            $username
-        );
+        $user = $this->repository->follow(auth()->id(), $username);
 
         return response()->json([
-            'profile' => $this->presenter->presentAsProfile($user)
+            'profile' => $this->presenter->presentAsProfile($user, true)
         ]);
     }
 
     public function unfollowProfile(Request $request, string $username): JsonResponse
     {
-        $user = $this->repository->unfollow(
-            auth()->user()?->getAuthIdentifier(),
-            $username
-        );
+        $user = $this->repository->unfollow(auth()->id(), $username);
 
         return response()->json([
-            'profile' => $this->presenter->presentAsProfile($user)
-        ]);
-    }
-
-    /**
-     * @param CypherMap $result
-     * @return JsonResponse
-     */
-    private function profileResponseFromArray(CypherMap $result): JsonResponse
-    {
-        $user = $result->getAsNode('u')->getProperties();
-        return response()->json([
-            'profile' => [
-                'username' => $user['username'],
-                'bio' => $user['bio'] ?? '',
-                'image' => $user['image'] ?? '',
-                'following' => $result->get('self') !== null
-            ]
+            'profile' => $this->presenter->presentAsProfile($user, false)
         ]);
     }
 }

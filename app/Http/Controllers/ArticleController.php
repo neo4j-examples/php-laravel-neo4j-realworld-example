@@ -2,141 +2,104 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Article;
+use App\Models\User;
+use App\Presenters\ArticleJSONPresenter;
+use App\Repositories\ArticleRepository;
+use App\Repositories\FavoriteRepository;
+use App\Repositories\TagsRepository;
+use App\Repositories\UserRepository;
 use App\SlugGenerator;
-use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Laudis\Neo4j\Basic\Session;
-use Laudis\Neo4j\Types\CypherMap;
+use function array_map;
+use function auth;
 use function response;
 
 class ArticleController extends Controller
 {
-    private Session $session;
-    private SlugGenerator $slugGenerator;
-
-    public function __construct(Session $session, SlugGenerator $slugGenerator)
+    public function __construct(
+        private readonly SlugGenerator $slugGenerator,
+        private readonly ArticleRepository $repository,
+        private readonly UserRepository $userRepository,
+        private readonly TagsRepository $tagsRepository,
+        private readonly FavoriteRepository $favoriteRepository,
+        private readonly ArticleJSONPresenter $presenter
+    )
     {
-        $this->session = $session;
-        $this->slugGenerator = $slugGenerator;
     }
 
     public function listArticles(Request $request): JsonResponse
     {
-        $result = $this->session->run(<<<'CYPHER'
-        MATCH (a:Article) <- [:AUTHORED] - (u:User)
-        OPTIONAL MATCH (a) - [:TAGGED] -> (t:Tag)
-        WITH a, [x IN collect(t) | x.name] AS tags, u
-        RETURN a{.title, .description, .body, tagList: tags, .createdAt, .updatedAt, .slug, author: {email: u.email, username: u.username, bio: u.bio, image: u.image, following: false}}
-        CYPHER);
+        $articles = $this->repository->listArticles();
+        $articleCount = $this->repository->articlesCount();
+        $slugs = array_map(static fn (Article $a) => $a->slug, $articles);
 
-        $article = $result->map(function (CypherMap $article) {
-            return $this->decorateArticle($article->getAsCypherMap('a'));
-        })->toArray();
+        $tags = $this->tagsRepository->getTags($slugs);
+        $authors = $this->userRepository->getAuthorFromArticle($slugs);
+        $authorUserNames = array_map(static fn (User $u) => $u->username, $authors);
+        $username = auth()->id();
+        $followingMap = [];
+        if ($username) {
+            $followingMap = $this->userRepository->following($username, $authorUserNames);
+        }
+        $favoriteCount = $this->favoriteRepository->countFavorites($slugs);
+        $favoritedMap = [];
+        if ($username) {
+            $favoritedMap = $this->favoriteRepository->favorited($username, $slugs);
+        }
 
-        return response()->json([
-            'articles' => $article,
-            'articlesCount' => count($article)
-        ]);
+        return response()->json($this->presenter->presentFullArticles($articles, $articleCount, $tags, $authors, $favoriteCount, $favoritedMap, $followingMap));
     }
 
     public function getArticle(Request $request, string $slug): JsonResponse
     {
-        $result = $this->session->run(<<<'CYPHER'
-        MATCH (a:Article {slug: $slug}) <- [:AUTHORED] - (u:User)
-        OPTIONAL MATCH (a) - [:TAGGED] -> (t:Tag)
-        WITH a, [x IN collect(t) | x.name] AS tags, u
-        RETURN a{.title, .description, .body, tagList: tags, .createdAt, .updatedAt, .slug, author: {email: u.email, username: u.username, bio: u.bio, image: u.image, following: false}}
-        CYPHER, ['slug' => $slug]);
+        $article = $this->repository->findArticle($slug);
 
-        if ($result->isEmpty()) {
-            return response()->json()->setStatusCode(404);
+        $tags = $this->tagsRepository->getTags([$article->slug])[$article->slug] ?? [];
+        $author = $this->userRepository->getAuthorFromArticle([$article->slug])[$article->slug];
+
+        $username = auth()->id();
+        if ($username === null) {
+            $following = false;
+        } else {
+            $following = $this->userRepository->following($username, [$author->username])[$author->username] ?? false;
         }
-        $article = $result->getAsCypherMap(0)->getAsCypherMap('a');
+        $favoriteCount = $this->favoriteRepository->countFavorites([$article->slug])[$article->slug];
 
-        return response()->json(['article' => $this->decorateArticle($article)]);
+        if ($username === null) {
+            $favorited = false;
+        } else {
+            $favorited = $this->favoriteRepository->favorited($username, [$article->slug])[$article->slug] ?? false;
+        }
+
+        return response()->json(['article' => $this->presenter->presentFullArticle($article, $author, $following, $tags, $favorited, $favoriteCount )]);
     }
 
     public function createArticle(Request $request): JsonResponse
     {
-        $email = auth()->user()?->getAuthIdentifier();
         $params = $request->json('article');
-        $params['email'] = $email;
-        $params['slug'] = $this->slugGenerator->generateSlug('Article', $params['title']);
+        $slug = $this->slugGenerator->generateSlug('Article', $params['title']);
 
-        $params['tagList'] ??= [];
+        $this->repository->createArticle($slug, $params['description'], $params['body'], $params['title'], auth()->id());
+        $this->tagsRepository->addTags($slug, $params['tagList'] ?? []);
 
-        $tsx = $this->session->beginTransaction();
-
-        $tsx->run(<<<'CYPHER'
-        MATCH (u:User {email: $email})
-        CREATE (article:Article {title: $title, description: $description, body: $body, createdAt: datetime(), updatedAt: datetime(), slug: $slug})
-        CREATE (u) - [:AUTHORED] -> (article)
-        CYPHER, $params);
-
-        $tsx->run(<<<'CYPHER'
-        MATCH (article:Article {slug: $slug})
-        UNWIND $tagList AS tag
-        MERGE (t:Tag {name: tag})
-        WITH article, t
-        MERGE (article) - [:TAGGED] -> (t)
-        CYPHER, $params);
-
-        $tsx->commit();
-
-        return $this->getArticle($request, $params['slug'])->setStatusCode(201);
+        return $this->getArticle($request, $slug)->setStatusCode(201);
     }
 
     public function deleteArticle(Request $request, string $slug): JsonResponse
     {
-        $this->session->run(<<<'CYPHER'
-        MATCH (a:Article {slug: $slug}) DETACH DELETE a
-        CYPHER, ['slug' => $slug]);
+        $this->repository->deleteArticle($slug);
 
         return response()->json();
     }
 
     public function updateArticle(Request $request, string $slug): JsonResponse
     {
+        // TODO - make sure only authors can change their own article
         $parameters = $request->json('article');
-        $this->session->run(<<<'CYPHER'
-        MATCH (a:Article {slug: $slug})
-        SET a.title = coalesce($parameters['title'], a.title),
-            a.description = coalesce($parameters['description'], a.description),
-            a.body = coalesce($parameters['body'], a.body)
-        CYPHER, ['slug' => $slug, 'parameters' => $parameters]);
+        $this->repository->updateArticle($slug, $parameters['description'] ?? null, $parameters['body'] ?? null, $parameters['title'] ?? null);
 
         return $this->getArticle($request, $slug)->setStatusCode(200);
-    }
-
-    /**
-     * @param CypherMap $article
-     * @return void
-     * @throws Exception
-     */
-    private function decorateArticle(CypherMap $article): array
-    {
-        $tbr = $article->toArray();
-        $tbr['createdAt'] = $article->getAsDateTime('createdAt')->toDateTime()->format('Y-m-d H:i:s.v') . 'Z';
-        $tbr['updatedAt'] = $article->getAsDateTime('updatedAt')->toDateTime()->format('Y-m-d H:i:s.v') . 'Z';
-
-        $favorites = $this->session->run(<<<'CYPHER'
-        MATCH (a:Article {slug: $slug})
-        OPTIONAL MATCH (a) <- [:FAVORITES] - (u:User {email: $email})
-        WITH a, u
-        MATCH (a) <- [:FAVORITES] - (o:User)
-        RETURN a, u IS NOT NULL AS favorited, count(o) AS count
-        CYPHER, ['slug' => $tbr['slug'], 'email' => optional(auth()->user())->getAuthIdentifier()]);
-
-        if ($favorites->isEmpty()) {
-            $tbr['favorited'] = false;
-            $tbr['favoritesCount'] = 0;
-        } else {
-            $tbr['favorited'] = $favorites->first()['favorited'];
-            $tbr['favoritesCount'] = $favorites->first()['count'];
-        }
-        $tbr['author'] = $tbr['author']->toArray();
-
-        return $tbr;
     }
 }

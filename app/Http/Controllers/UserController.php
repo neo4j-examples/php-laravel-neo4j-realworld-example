@@ -13,10 +13,7 @@ use function response;
 
 class UserController extends Controller
 {
-    public function __construct(
-        private readonly UserRepository $repository,
-        private readonly UserJSONPresenter $presenter
-    )
+    public function __construct(private readonly UserRepository $repository, private readonly UserJSONPresenter $presenter)
     {
     }
 

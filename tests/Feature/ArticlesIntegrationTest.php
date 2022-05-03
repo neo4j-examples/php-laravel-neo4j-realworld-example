@@ -144,7 +144,7 @@ class ArticlesIntegrationTest extends TestCase
             'article' => [
                 'body' => 'This is a short blogpost about testing and developing. EDIT: extended about section.'
             ]
-        ]);
+        ], ['Authorization' => self::$token]);
 
         $response->assertStatus(200);
         $response->assertJson(static function (AssertableJson $json) {
@@ -181,7 +181,7 @@ class ArticlesIntegrationTest extends TestCase
      */
     public function testDelete(): void
     {
-        $response = $this->delete('/api/articles/test-article');
+        $response = $this->delete('/api/articles/test-article', [], ['Authorization' => self::$token]);
 
         $response->assertStatus(200);
     }

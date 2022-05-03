@@ -10,7 +10,7 @@ class Comment
         public readonly int $id,
         public readonly DateTimeInterface $createdAt,
         public readonly DateTimeInterface $updatedAt,
-        public readonly UserModel $author
+        public readonly string $body
     )
     {
     }
