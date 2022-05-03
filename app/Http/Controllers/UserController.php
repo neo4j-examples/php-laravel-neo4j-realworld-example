@@ -5,17 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\UserModel;
 use App\Presenters\UserJSONPresenter;
 use App\Repositories\UserRepository;
-use Firebase\JWT\JWT;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Laudis\Neo4j\Basic\Session;
 use function auth;
-use function env;
 use function response;
-use function time;
 
-final class UserController extends Controller
+class UserController extends Controller
 {
     public function __construct(
         private readonly UserRepository $repository,
@@ -48,6 +44,15 @@ final class UserController extends Controller
             ->setStatusCode(201);
     }
 
+    public function get(Request $request): JsonResponse
+    {
+        $user = $this->repository->findByUsername(auth()->user()?->getAuthIdentifier());
+
+        return response()
+            ->json(['user' => $this->presenter->presentAsUser($user)])
+            ->setStatusCode(200);
+    }
+
     public function update(Request $request): JsonResponse
     {
         $requestedUser = $request->json('user');
@@ -60,7 +65,7 @@ final class UserController extends Controller
             return response()->json()->setStatusCode(401);
         }
 
-        $user = $this->repository->update('', '' , '', '');
+        $user = $this->repository->update($requestedUser['email'], $requestedUser['username'] , $requestedUser['bio'], $requestedUser['image']);
 
         return response()
             ->json(['user' => $this->presenter->presentAsUser($user)]);

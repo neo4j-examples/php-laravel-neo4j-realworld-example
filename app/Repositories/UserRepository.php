@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Laudis\Neo4j\Basic\Session;
 use Laudis\Neo4j\Databags\SummarizedResult;
 use RuntimeException;
+use function array_filter;
 use function array_merge;
 use function compact;
 use function sprintf;
@@ -35,9 +36,10 @@ class UserRepository
         return $this->getUserFromResult($result, $email);
     }
 
-    public function update(string $email, string $username, string $bio, string $image): User
+    public function update(?string $email, ?string $username, ?string $bio, ?string $image): User
     {
-        $user = array_merge((array) $authenticatable->getAttribute('user'), $requestedUser);
+        $toUpdate = compact('email', 'username', 'bio', 'image');
+        $user = array_merge((array) auth()->user()?->getAttribute('user'), array_filter($toUpdate, static fn ($x) => $x !== null));
         $result = $this->session->run(<<<'CYPHER'
         MATCH (u:User {email: $email})
         SET u.username = $username,
@@ -90,6 +92,17 @@ class UserRepository
         return !$result->isEmpty();
     }
 
+    public function unfollow(string $usernameA, string $usernameB): User
+    {
+        $result = $this->session->run(<<<'CYPHER'
+        MATCH (:User {username: $usernameA}) - [f:FOLLOWS] -> (u:User {username: $usernameB})
+        DELETE f
+        RETURN u
+        CYPHER, compact('usernameA', 'usernameB'));
+
+        return $this->getUserFromResult($result, $usernameB);
+    }
+
     private function getUserFromResult(SummarizedResult $result, string $username): User
     {
         if ($result->isEmpty()) {
@@ -107,16 +120,5 @@ class UserRepository
             image: $user['image'] ?? '',
             passwordHash: $user['passwordHash']
         );
-    }
-
-    public function unfollow(string $usernameA, string $usernameB): User
-    {
-        $result = $this->session->run(<<<'CYPHER'
-        MATCH (:User {username: $usernameA}) - [f:FOLLOWS] -> (u:User {username: $usernameB})
-        DELETE f
-        RETURN u
-        CYPHER, compact('usernameA', 'usernameB'));
-
-        return $this->getUserFromResult($result, $usernameB);
     }
 }
