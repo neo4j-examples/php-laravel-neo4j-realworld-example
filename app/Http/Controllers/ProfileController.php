@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\UserJSONPresenter;
-use App\UserRepository;
+use App\Presenters\UserJSONPresenter;
+use App\Repositories\UserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Laudis\Neo4j\Types\CypherMap;
@@ -30,7 +30,7 @@ class ProfileController extends Controller
     public function followProfile(Request $request, string $username): JsonResponse
     {
         $user = $this->repository->follow(
-            auth()->user()->getAuthIdentifier(),
+            auth()->user()?->getAuthIdentifier(),
             $username
         );
 
@@ -42,7 +42,7 @@ class ProfileController extends Controller
     public function unfollowProfile(Request $request, string $username): JsonResponse
     {
         $user = $this->repository->unfollow(
-            auth()->user()->getAuthIdentifier(),
+            auth()->user()?->getAuthIdentifier(),
             $username
         );
 

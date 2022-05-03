@@ -1,8 +1,9 @@
 <?php
 
-namespace App;
+namespace App\Presenters;
 
 use App\Models\User;
+use App\Repositories\UserRepository;
 use Firebase\JWT\JWT;
 use function env;
 use function time;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Repositories;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -112,7 +112,7 @@ class UserRepository
     public function unfollow(string $usernameA, string $usernameB): User
     {
         $result = $this->session->run(<<<'CYPHER'
-        MATCH (u:User {username: $usernameB}) <- [f:FOLLOWS] - (self:User {email: $usernameA})
+        MATCH (:User {username: $usernameA}) - [f:FOLLOWS] -> (u:User {username: $usernameB})
         DELETE f
         RETURN u
         CYPHER, compact('usernameA', 'usernameB'));

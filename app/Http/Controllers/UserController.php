@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserModel;
-use App\UserJSONPresenter;
-use App\UserRepository;
+use App\Presenters\UserJSONPresenter;
+use App\Repositories\UserRepository;
 use Firebase\JWT\JWT;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

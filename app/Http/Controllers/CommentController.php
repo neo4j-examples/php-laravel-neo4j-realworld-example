@@ -64,8 +64,8 @@ class CommentController extends Controller
         return response()->json([
             'comment' => [
                 'id' => $comment->get('id'),
-                'createdAt' => $comment->get('createdAt')->toDateTime()->format(DATE_ATOM),
-                'updatedAt' => $comment->get('updatedAt')->toDateTime()->format(DATE_ATOM),
+                'createdAt' => $comment->get('createdAt')?->toDateTime()->format(DATE_ATOM),
+                'updatedAt' => $comment->get('updatedAt')?->toDateTime()->format(DATE_ATOM),
                 'body' => $comment->get('body'),
                 'author' => [
                     'username' => $user->get('username'),

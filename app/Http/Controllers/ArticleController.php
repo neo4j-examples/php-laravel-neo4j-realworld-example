@@ -6,7 +6,6 @@ use App\SlugGenerator;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Laudis\Neo4j\Basic\Session;
 use Laudis\Neo4j\Types\CypherMap;
 use function response;
@@ -60,7 +59,7 @@ class ArticleController extends Controller
 
     public function createArticle(Request $request): JsonResponse
     {
-        $email = optional(auth()->user())->getAuthIdentifier();
+        $email = auth()->user()?->getAuthIdentifier();
         $params = $request->json('article');
         $params['email'] = $email;
         $params['slug'] = $this->slugGenerator->generateSlug('Article', $params['title']);
