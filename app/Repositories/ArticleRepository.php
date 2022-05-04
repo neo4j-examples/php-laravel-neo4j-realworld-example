@@ -4,8 +4,11 @@ namespace App\Repositories;
 
 use App\Models\Article;
 use Laudis\Neo4j\Basic\Session;
+use Laudis\Neo4j\Types\CypherMap;
 use Laudis\Neo4j\Types\Node;
 use function abort;
+use function compact;
+use const PHP_EOL;
 
 class ArticleRepository
 {
@@ -23,18 +26,32 @@ class ArticleRepository
             ->getAsInt('count');
     }
 
-    public function listArticles(?string $tag = '', ?string $author = '', ?bool $favorited = null, int $limit = 20, ?int $offset = 0): array
+    public function listArticles(?string $tag = '', ?string $author = '', ?string $favorited = null, ?int $limit = 20, ?int $offset = 0): array
     {
-        // todo - list articles
-        $result = $this->session->run(<<<'CYPHER'
-        MATCH (article:Article)
-        RETURN collect(article) AS articles
-        CYPHER);
+        $limit ??= 20;
+        $offset ??= 0;
+        $matchClause = 'MATCH (article: Article)';
+        if ($tag !== null) {
+            $matchClause .= PHP_EOL.'MATCH (:Tag {name: $tag}) <- [:TAGGED] - (article)';
+        }
+        if ($author !== null) {
+            $matchClause .= PHP_EOL.'MATCH (:User {name: $author}) - [:AUTHORED] -> (article)';
+        }
+        if ($favorited !== null) {
+            $matchClause .= PHP_EOL.'MATCH (:User {name: $favorited}) - [:FAVORITED] -> (article)';
+        }
 
-        return $result->getAsCypherMap(0)
-            ->getAsArrayList('articles')
-            ->map($this->createArticleFromNode(...))
-            ->toArray();
+        $result = $this->session->run(<<<CYPHER
+        $matchClause
+        RETURN article
+        SKIP \$offset
+        LIMIT \$limit
+        CYPHER, ['limit' => $limit, 'offset' => $offset, 'author' => $author, 'tag' => $tag, 'favorited' => $favorited]);
+
+
+        return $result->map(function (CypherMap $map) {
+            return $this->createArticleFromNode($map->getAsNode('article'));
+        })->toArray();
     }
 
     public function findArticle(string $slug): Article

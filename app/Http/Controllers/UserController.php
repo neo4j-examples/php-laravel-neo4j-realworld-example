@@ -19,6 +19,11 @@ class UserController extends Controller
 
     public function login(Request $request): JsonResponse
     {
+        $request->validate([
+            'user.email' => 'required|email:rfc',
+            'user.password' => 'required|max:255'
+        ]);
+
         $credentials = $request->json('user');
 
         $user = $this->repository->findByEmail($credentials['email']);

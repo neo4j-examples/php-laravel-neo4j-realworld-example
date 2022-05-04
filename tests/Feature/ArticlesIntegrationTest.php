@@ -179,6 +179,33 @@ class ArticlesIntegrationTest extends TestCase
     /**
      * @depends testCreateArticle
      */
+    public function testDeleteUnauthorized(): void
+    {
+        $this->postJson('/api/users', [
+            'user' => [
+                'username' => 'bob2',
+                'email' => 'bob.ross2@gmail.com',
+                'password' => '123456'
+            ]
+        ]);
+
+        $response = $this->postJson('/api/users/login', [
+            'user' => [
+                'email' => 'bob.ross2@gmail.com',
+                'password' => '123456'
+            ],
+        ]);
+
+        $token = 'Bearer ' . $response->json('user.token');
+
+        $response = $this->delete('/api/articles/test-article', [], ['Authorization' => $token]);
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * @depends testDeleteUnauthorized
+     */
     public function testDelete(): void
     {
         $response = $this->delete('/api/articles/test-article', [], ['Authorization' => self::$token]);

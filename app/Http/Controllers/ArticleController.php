@@ -12,6 +12,7 @@ use App\Repositories\UserRepository;
 use App\SlugGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use function array_map;
 use function auth;
 use function response;
@@ -31,7 +32,13 @@ class ArticleController extends Controller
 
     public function listArticles(Request $request): JsonResponse
     {
-        $articles = $this->repository->listArticles();
+        $articles = $this->repository->listArticles(
+            $request->query('tag', null),
+            $request->query('author', null),
+            $request->query('favorited', null),
+            (int) $request->query('limit', '20'),
+            (int) $request->query('offset', '0')
+        );
         $articleCount = $this->repository->articlesCount();
         $slugs = array_map(static fn (Article $a) => $a->slug, $articles);
 
@@ -89,6 +96,8 @@ class ArticleController extends Controller
 
     public function deleteArticle(Request $request, string $slug): JsonResponse
     {
+        Gate::authorize('change-article', $slug);
+
         $this->repository->deleteArticle($slug);
 
         return response()->json();

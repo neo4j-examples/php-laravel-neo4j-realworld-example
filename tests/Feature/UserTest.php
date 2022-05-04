@@ -59,6 +59,27 @@ final class UserTest extends TestCase
     }
 
     /**
+     * @depends testCreateUser
+     */
+    public function testLoginInvalid(): void
+    {
+        $response = $this->postJson('/api/users/login', [
+            'user' => [
+                'email' => 'abc'
+            ],
+        ]);
+
+        $response->assertStatus(422);
+
+        $response->assertJson(static function (AssertableJson $json) {
+            $json->where('errors.body', 'The user.email must be a valid email address.
+The user.password field is required.');
+        });
+
+        self::$token = 'Bearer ' . $response->json('user.token');
+    }
+
+    /**
      * @depends testLogin
      */
     public function testGetUser(): void
