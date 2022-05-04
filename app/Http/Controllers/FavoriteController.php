@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UserModel;
 use App\Repositories\FavoriteRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
