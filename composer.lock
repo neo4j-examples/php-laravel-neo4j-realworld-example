@@ -5695,12 +5695,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Vinelab/NeoEloquent.git",
-                "reference": "424ea0a6b305743478870d7790743b68731c52cb"
+                "reference": "3003dd587c4b6f593f8b55e5577d70d54eaaadd8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Vinelab/NeoEloquent/zipball/424ea0a6b305743478870d7790743b68731c52cb",
-                "reference": "424ea0a6b305743478870d7790743b68731c52cb",
+                "url": "https://api.github.com/repos/Vinelab/NeoEloquent/zipball/3003dd587c4b6f593f8b55e5577d70d54eaaadd8",
+                "reference": "3003dd587c4b6f593f8b55e5577d70d54eaaadd8",
                 "shasum": ""
             },
             "require": {
@@ -5756,7 +5756,7 @@
                 "issues": "https://github.com/Vinelab/NeoEloquent/issues",
                 "source": "https://github.com/Vinelab/NeoEloquent/tree/dsl-rework"
             },
-            "time": "2022-05-18T12:12:58+00:00"
+            "time": "2022-05-18T12:46:10+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\ArticleModel;
 use App\Models\User;
 use App\Presenters\ArticleJSONPresenter;
 use App\Repositories\ArticleRepository;
@@ -59,10 +60,8 @@ class ArticleController extends Controller
         return response()->json($this->presenter->presentFullArticles($articles, $articleCount, $tags, $authors, $favoriteCount, $favoritedMap, $followingMap));
     }
 
-    public function getArticle(Request $request, string $slug): JsonResponse
+    public function getArticle(ArticleModel $article): JsonResponse
     {
-        $article = $this->repository->findArticle($slug);
-
         $tags = $this->tagsRepository->getTags([$article->slug])[$article->slug] ?? [];
         $author = $this->userRepository->getAuthorFromArticle([$article->slug])[$article->slug];
 
@@ -91,7 +90,7 @@ class ArticleController extends Controller
         $this->repository->createArticle($slug, $params['description'], $params['body'], $params['title'], auth()->id());
         $this->tagsRepository->addTags($slug, $params['tagList'] ?? []);
 
-        return $this->getArticle($request, $slug)->setStatusCode(201);
+        return $this->getArticle(ArticleModel::find($slug))->setStatusCode(201);
     }
 
     public function deleteArticle(Request $request, string $slug): JsonResponse

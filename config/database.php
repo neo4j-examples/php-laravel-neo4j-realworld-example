@@ -43,6 +43,17 @@ return [
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
 
+        'neo4j' => [
+            'driver' => 'neo4j',
+            'scheme' => env('DB_SCHEME', 'bolt'),
+            'host' => env('DB_HOST', 'localhost'),
+            'port' => env('DB_PORT', 7687),
+            'database' => env('DB_DATABASE', 'neo4j'),
+            'username' => env('DB_USERNAME'),
+            'password' => env('DB_PASSWORD'),
+            'prefix' => ''
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),
@@ -90,7 +101,6 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
-
     ],
 
     /*
