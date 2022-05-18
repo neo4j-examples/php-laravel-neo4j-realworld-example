@@ -12,7 +12,8 @@
         "laravel/framework": "^8.75",
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
-        "laudis/neo4j-php-client": "^2.4"
+        "laudis/neo4j-php-client": "^2.4",
+        "vinelab/neoeloquent": "dev-dsl-rework"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
