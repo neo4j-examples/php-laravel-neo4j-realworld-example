@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ArticleModel;
 use Illuminate\Support\Collection;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;

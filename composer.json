@@ -13,6 +13,8 @@
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
         "laudis/neo4j-php-client": "^2.4",
+        "spatie/laravel-sluggable": "^3.4",
+        "wikibase-solutions/php-cypher-dsl": "dev-main",
         "vinelab/neoeloquent": "dev-dsl-rework"
     },
     "require-dev": {

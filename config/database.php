@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'mysql'),
+    'default' => env('DB_CONNECTION', 'neo4j'),
 
     /*
     |--------------------------------------------------------------------------
@@ -50,8 +50,7 @@ return [
             'port' => env('DB_PORT', 7687),
             'database' => env('DB_DATABASE', 'neo4j'),
             'username' => env('DB_USERNAME'),
-            'password' => env('DB_PASSWORD'),
-            'prefix' => ''
+            'password' => env('DB_PASSWORD')
         ],
 
         'mysql' => [

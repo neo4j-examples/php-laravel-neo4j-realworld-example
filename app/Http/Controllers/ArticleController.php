@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ArticleResource;
 use App\Models\Article;
 use App\Models\ArticleModel;
+use App\Models\Tag;
+use App\Models\TagModel;
 use App\Models\User;
 use App\Presenters\ArticleJSONPresenter;
 use App\Repositories\ArticleRepository;
@@ -13,6 +16,7 @@ use App\Repositories\UserRepository;
 use App\SlugGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use function array_map;
 use function auth;
@@ -60,37 +64,41 @@ class ArticleController extends Controller
         return response()->json($this->presenter->presentFullArticles($articles, $articleCount, $tags, $authors, $favoriteCount, $favoritedMap, $followingMap));
     }
 
-    public function getArticle(ArticleModel $article): JsonResponse
+    public function getArticle(ArticleModel $article): ArticleResource
     {
-        $tags = $this->tagsRepository->getTags([$article->slug])[$article->slug] ?? [];
-        $author = $this->userRepository->getAuthorFromArticle([$article->slug])[$article->slug];
+//        $tags = $this->tagsRepository->getTags([$article->slug])[$article->slug] ?? [];
+//        $author = $this->userRepository->getAuthorFromArticle([$article->slug])[$article->slug];
+//
+//        $username = auth()->id();
+//        if ($username === null) {
+//            $following = false;
+//        } else {
+//            $following = $this->userRepository->following($username, [$author->username])[$author->username] ?? false;
+//        }
+//        $favoriteCount = $this->favoriteRepository->countFavorites([$article->slug])[$article->slug];
+//
+//        if ($username === null) {
+//            $favorited = false;
+//        } else {
+//            $favorited = $this->favoriteRepository->favorited($username, [$article->slug])[$article->slug] ?? false;
+//        }
 
-        $username = auth()->id();
-        if ($username === null) {
-            $following = false;
-        } else {
-            $following = $this->userRepository->following($username, [$author->username])[$author->username] ?? false;
-        }
-        $favoriteCount = $this->favoriteRepository->countFavorites([$article->slug])[$article->slug];
-
-        if ($username === null) {
-            $favorited = false;
-        } else {
-            $favorited = $this->favoriteRepository->favorited($username, [$article->slug])[$article->slug] ?? false;
-        }
-
-        return response()->json(['article' => $this->presenter->presentFullArticle($article, $author, $following, $tags, $favorited, $favoriteCount )]);
+        return new ArticleResource($article);
     }
 
     public function createArticle(Request $request): JsonResponse
     {
         $params = $request->json('article');
-        $slug = $this->slugGenerator->generateSlug('Article', $params['title']);
 
-        $this->repository->createArticle($slug, $params['description'], $params['body'], $params['title'], auth()->id());
-        $this->tagsRepository->addTags($slug, $params['tagList'] ?? []);
+        /** @var ArticleModel $model */
+        $model = ArticleModel::query()->create($params);
+        $model->author()->associate(auth());
+        $tags = collect($params['tagList'])->map(static fn(string $x) => new TagModel(['name' => $x]));
+        $model->tags()->saveMany($tags);
 
-        return $this->getArticle(ArticleModel::find($slug))->setStatusCode(201);
+        return (new ArticleResource($model))
+            ->toResponse($request)
+            ->setStatusCode(201);
     }
 
     public function deleteArticle(Request $request, string $slug): JsonResponse
