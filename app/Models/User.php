@@ -22,12 +22,17 @@ use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
  * @property string $image
  * @property string $passwordHash
  */
-class UserModel extends Model implements
+class User extends Model implements
     AuthenticatableContract,
     AuthorizableContract,
     CanResetPasswordContract
 {
-    use HasApiTokens, HasFactory, Notifiable, Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail;
+    use HasApiTokens,
+        HasFactory,
+        Notifiable,
+        Authenticatable,
+        Authorizable,
+        CanResetPassword;
 
     /**
      * The attributes that are mass assignable.
@@ -40,6 +45,7 @@ class UserModel extends Model implements
         'bio',
         'image',
         'passwordHash',
+        'email_verified_at',
     ];
 
     /**
@@ -53,11 +59,11 @@ class UserModel extends Model implements
 
     public function getAuthIdentifier(): string
     {
-        return $this->attributes['user']->username;
+        return $this->username;
     }
 
     public function writtenArticles(): HasMany
     {
-        return $this->hasManyRelationship(ArticleModel::class, 'AUTHORED');
+        return $this->hasManyRelationship(Article::class, 'AUTHORED');
     }
 }

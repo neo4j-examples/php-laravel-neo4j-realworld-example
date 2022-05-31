@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use App\Models\Article;
 use App\Models\User;
-use App\Models\UserModel;
+use App\Models\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Laudis\Neo4j\Basic\Session;
@@ -27,7 +27,7 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        Gate::define('change-article', function (UserModel $user, string $slug) {
+        Gate::define('change-article', function (User $user, string $slug) {
             /** @var Session $session */
             $session = $this->app->get(Session::class);
 

@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\UserModel;
+use App\Models\User;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
 
              $token = (array) JWT::decode(str_replace('Bearer ', '', $token), new Key(env('APP_KEY'), 'HS256'));
 
-             $user = new UserModel();
+             $user = new User();
              $user->setRawAttributes($token);
 
              return $user;

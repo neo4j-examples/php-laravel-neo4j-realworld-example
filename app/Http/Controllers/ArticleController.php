@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ArticleResource;
 use App\Models\Article;
-use App\Models\ArticleModel;
+use App\Models\Article;
 use App\Models\Tag;
-use App\Models\TagModel;
+use App\Models\Tag;
 use App\Models\User;
 use App\Presenters\ArticleJSONPresenter;
 use App\Repositories\ArticleRepository;
@@ -64,7 +64,7 @@ class ArticleController extends Controller
         return response()->json($this->presenter->presentFullArticles($articles, $articleCount, $tags, $authors, $favoriteCount, $favoritedMap, $followingMap));
     }
 
-    public function getArticle(ArticleModel $article): ArticleResource
+    public function getArticle(Article $article): ArticleResource
     {
 //        $tags = $this->tagsRepository->getTags([$article->slug])[$article->slug] ?? [];
 //        $author = $this->userRepository->getAuthorFromArticle([$article->slug])[$article->slug];
@@ -90,10 +90,10 @@ class ArticleController extends Controller
     {
         $params = $request->json('article');
 
-        /** @var ArticleModel $model */
-        $model = ArticleModel::query()->create($params);
+        /** @var Article $model */
+        $model = Article::query()->create($params);
         $model->author()->associate(auth());
-        $tags = collect($params['tagList'])->map(static fn(string $x) => new TagModel(['name' => $x]));
+        $tags = collect($params['tagList'])->map(static fn(string $x) => new Tag(['name' => $x]));
         $model->tags()->saveMany($tags);
 
         return (new ArticleResource($model))

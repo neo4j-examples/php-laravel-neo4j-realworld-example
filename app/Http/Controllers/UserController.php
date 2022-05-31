@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UserModel;
+use App\Models\User;
 use App\Presenters\UserJSONPresenter;
 use App\Repositories\UserRepository;
 use Illuminate\Http\JsonResponse;
@@ -59,7 +59,7 @@ class UserController extends Controller
     {
         $requestedUser = $request->json('user');
 
-        /** @var UserModel|null $authenticatable */
+        /** @var User|null $authenticatable */
         $authenticatable = auth()->user();
         if ($authenticatable === null ||
             (isset($requestedUser['username']) && $authenticatable->getAuthIdentifier() !== $requestedUser['username']))

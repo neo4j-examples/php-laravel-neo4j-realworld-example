@@ -21,40 +21,38 @@ use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
  *
  * @property Collection $comments
  * @property Collection $tags
- * @property UserModel $author
+ * @property User $author
  * @property Collection $favoritedBy
  * @property int $favoriteCount
  * @property bool $favorited
  */
-class ArticleModel extends Model
+class Article extends Model
 {
     use HasFactory;
     use HasSlug;
 
     protected $fillable = ['title', 'description', 'body'];
 
-    protected $table = 'Article';
-
     protected $primaryKey = 'slug';
 
     public function comments(): HasMany
     {
-        return $this->hasManyRelationship(CommentModel::class, 'HAS_COMMENT');
+        return $this->hasManyRelationship(Comment::class, 'HAS_COMMENT');
     }
 
     public function tags(): HasMany
     {
-        return $this->hasManyRelationship(TagModel::class, 'TAGGED');
+        return $this->hasManyRelationship(Tag::class, 'TAGGED');
     }
 
     public function author(): BelongsTo
     {
-        return $this->belongsToRelation(UserModel::class, 'AUTHORED');
+        return $this->belongsToRelation(User::class, 'AUTHORED');
     }
 
     public function favoritedBy(): HasMany
     {
-        return $this->hasManyRelationship(UserModel::class, 'FAVORITED_BY');
+        return $this->hasManyRelationship(User::class, 'FAVORITED_BY');
     }
 
     public function getFavoritedAttribute(): bool

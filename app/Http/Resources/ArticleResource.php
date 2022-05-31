@@ -3,12 +3,12 @@
 namespace App\Http\Resources;
 
 use App\Models\Article;
-use App\Models\ArticleModel;
+use App\Models\Article;
 use Illuminate\Http\Resources\Json\JsonResource;
 use const DATE_ATOM;
 
 /**
- * @mixin ArticleModel
+ * @mixin Article
  */
 class ArticleResource extends JsonResource
 {

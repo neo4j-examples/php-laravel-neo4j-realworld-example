@@ -12,9 +12,9 @@ use Vinelab\NeoEloquent\Eloquent\Model;
  * @property Carbon $updatedAt
  * @property string $body
  */
-class CommentModel extends Model
+class Comment extends Model
 {
     use HasFactory;
 
-    protected $table = 'Comment';
+    protected $fillable = ['body'];
 }

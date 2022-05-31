@@ -8,11 +8,9 @@ use Vinelab\NeoEloquent\Eloquent\Model;
 /**
  * @property string $name
  */
-class TagModel extends Model
+class Tag extends Model
 {
     use HasFactory;
 
     protected $fillable = ['name'];
-
-    protected $table = 'Tag';
 }
