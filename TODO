@@ -3,3 +3,6 @@
 - migrations: indexes, constraints and apoc
 - datetimes
 - validation
+- preload relationship
+- database factory
+- seeding

@@ -8,7 +8,9 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Eloquent\Factories\BelongsToManyRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -65,5 +67,20 @@ class User extends Model implements
     public function writtenArticles(): HasMany
     {
         return $this->hasManyRelationship(Article::class, 'AUTHORED');
+    }
+
+    public function favorited(): BelongsToMany
+    {
+        return $this->belongsToManyRelation(Article::class, 'FAVORITED>');
+    }
+
+    public function followers(): BelongsToMany
+    {
+        return $this->belongsToManyRelation(__CLASS__, '<FOLLOWING');
+    }
+
+    public function following(): BelongsToMany
+    {
+        return $this->belongsToManyRelation(__CLASS__, 'FOLLOWING>');
     }
 }

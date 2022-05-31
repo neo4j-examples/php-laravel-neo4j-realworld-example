@@ -2,28 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\FavoriteRepository;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Http\Resources\ArticleResource;
+use App\Models\Article;
 use function auth;
 
 class FavoriteController extends Controller
 {
-    public function __construct(private readonly FavoriteRepository $repository, private readonly ArticleController $articleController)
+    public function favorite(Article $article): ArticleResource
     {
+        $article->favoritedBy()->attach(auth()->id());
+
+        return new ArticleResource($article);
     }
 
-    public function favorite(Request $request, string $slug): JsonResponse
+    public function unfavorite(Article $article): ArticleResource
     {
-        $this->repository->favorite(auth()->id(), $slug);
+        $article->favoritedBy()->detach(auth()->id());
 
-        return $this->articleController->getArticle($request, $slug);
-    }
-
-    public function unfavorite(Request $request, string $slug): JsonResponse
-    {
-        $this->repository->unfavorite(auth()->id(), $slug);
-
-        return $this->articleController->getArticle($request, $slug);
+        return new ArticleResource($article);
     }
 }

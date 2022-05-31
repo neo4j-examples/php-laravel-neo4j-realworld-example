@@ -26,7 +26,8 @@ class UserController extends Controller
 
         $credentials = $request->json('user');
 
-        $user = $this->repository->findByEmail($credentials['email']);
+        /** @var User $user */
+        $user = User::query()->where('email', $credentials['email'])->firstOrFail();
 
         if (!Hash::check($credentials['password'], $user->passwordHash)) {
             return response()->json(['errors' => ['body' => ['Invalid password']]])->setStatusCode(422);

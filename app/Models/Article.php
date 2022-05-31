@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Vinelab\NeoEloquent\Eloquent\Model;
@@ -40,9 +41,9 @@ class Article extends Model
         return $this->hasManyRelationship(Comment::class, 'HAS_COMMENT');
     }
 
-    public function tags(): HasMany
+    public function tags(): BelongsToMany
     {
-        return $this->hasManyRelationship(Tag::class, 'TAGGED');
+        return $this->belongsToManyRelation(Tag::class, '<TAGGED');
     }
 
     public function author(): BelongsTo
@@ -50,15 +51,15 @@ class Article extends Model
         return $this->belongsToRelation(User::class, 'AUTHORED');
     }
 
-    public function favoritedBy(): HasMany
+    public function favoritedBy(): BelongsToMany
     {
-        return $this->hasManyRelationship(User::class, 'FAVORITED_BY');
+        return $this->belongsToManyRelation(User::class, '<FAVORITED');
     }
 
     public function getFavoritedAttribute(): bool
     {
         return $this->favoritedBy()
-            ->where('User.email', auth()->id())
+            ->where('User.username', auth()->id())
             ->exists();
     }
 

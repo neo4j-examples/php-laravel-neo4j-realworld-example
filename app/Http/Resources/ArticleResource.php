@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\Article;
-use App\Models\Article;
 use Illuminate\Http\Resources\Json\JsonResource;
 use const DATE_ATOM;
 
@@ -17,17 +16,16 @@ class ArticleResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'title' => $this->title,
             'slug' => $this->slug,
-            'body' => $this->body,
+            'title' => $this->title,
             'description' => $this->description,
-            'createdAt' => $this->createdAt->toDateTime()->format(DATE_ATOM),
-            'updatedAt' => $this->updatedAt->toDateTime()->format(DATE_ATOM),
-
+            'body' => $this->body,
             'tagList' => TagResource::collection($this->tags),
-            'author' => UserResource::collection($this->author),
+            'createdAt' => $this->createdAt,
+            'updatedAt' => $this->updatedAt,
             'favorited' => $this->favorited,
-            'favoriteCount' => $this->favoriteCount
+            'favoriteCount' => $this->favoriteCount,
+            'author' => new ProfileResource($this->author),
         ];
     }
 }

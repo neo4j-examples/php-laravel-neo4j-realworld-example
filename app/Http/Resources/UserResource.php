@@ -2,18 +2,47 @@
 
 namespace App\Http\Resources;
 
+use App\Models\User;
+use Firebase\JWT\JWT;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Config;
+use function time;
 
+/**
+ * @mixin User
+ */
 class UserResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
-     */
-    public function toArray($request)
+    public function toArray($request): array
     {
-        return parent::toArray($request);
+        $jwt = $this->createToken();
+
+        return [
+            'email' => $this->email,
+            'username' => $this->username,
+            'bio' => $this->bio,
+            'image' => $this->image,
+            'token' => $jwt
+        ];
+    }
+
+    private function createToken(User $user): string
+    {
+        $key = Config::get('app.key');
+        $payload = array(
+            "iss" => Config::get('app.url'),
+            "aud" => Config::get('app.url'),
+            "iat" => time(),
+            "nbf" => time(),
+            "exp" => time() + (24 * 60 * 60),
+            "user" => [
+                'email' => $user->email,
+                'username' => $user->username,
+                'bio' => $user->bio,
+                'image' => $user->image
+            ]
+        );
+
+        return JWT::encode($payload, $key, 'HS256');
     }
 }

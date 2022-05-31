@@ -2,51 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CommentResource;
+use App\Models\Article;
 use App\Models\Comment;
-use App\Models\User;
-use App\Presenters\CommentJSONPresenter;
-use App\Repositories\CommentRepository;
-use App\Repositories\UserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Support\Arr;
+use Symfony\Component\HttpFoundation\Response;
 use function auth;
 use function response;
 
 class CommentController extends Controller
 {
-    public function __construct(
-        private readonly CommentRepository $repository,
-        private readonly UserRepository $userRepository,
-        private readonly CommentJSONPresenter $presenter
-    ) {
+    public function getComments(Article $article): ResourceCollection
+    {
+        return CommentResource::collection($article->comments);
     }
 
-    public function getComments(Request $request, string $slug): JsonResponse
+    public function comment(Request $request, Article $article): JsonResponse
     {
-        $comments = $this->repository->getComments($slug);
-        $commentIds = array_map(static fn (Comment $c) => $c->id, $comments);
-        $authorMap = $this->userRepository->getCommentAuthors($commentIds);
-        $authorUsernames = array_map(static fn (User $u) => $u->username, $authorMap);
-        $followingMap = [];
-        if (auth()->id()) {
-            $followingMap = $this->userRepository->following(auth()->id(), $authorUsernames);
-        }
+        $data = $request->json('comment');
 
-        return response()->json(['comments' => $this->presenter->presentCommentsOnArticle($comments, $authorMap, $followingMap)]);
+        /** @var Comment $comment */
+        $comment = Comment::query()->create(Arr::only($data, 'body'));
+
+        $comment->article()->associate($article);
+
+        return (new CommentResource($comment))
+            ->toResponse($request)
+            ->setStatusCode(Response::HTTP_CREATED);
     }
 
-    public function comment(Request $request, string $slug): JsonResponse
+    public function uncomment(Article $slug, Comment $comment): JsonResponse
     {
-        $comment = $this->repository->comment($slug, $request->json('comment')['body'], auth()->id());
-
-        $user = $this->userRepository->findByUsername(auth()->id());
-
-        return response()->json(['comment' => $this->presenter->presentFullComment($user, $comment, false)]);
-    }
-
-    public function uncomment(Request $request, string $slug, int $id): JsonResponse
-    {
-        $this->repository->uncomment($slug, auth()->id(), $id);
+        $comment->article()->dissociate();
 
         return response()->json();
     }
