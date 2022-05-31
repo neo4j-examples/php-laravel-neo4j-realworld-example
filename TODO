@@ -6,3 +6,6 @@
 - preload relationship
 - database factory
 - seeding
+- observers
+- self follow rule
+- i18n

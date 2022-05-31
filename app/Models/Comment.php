@@ -15,6 +15,7 @@ use const DATE_ATOM;
  * @property string $body
  *
  * @property User $author
+ * @property Article $article@
  */
 class Comment extends Model
 {

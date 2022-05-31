@@ -60,8 +60,12 @@ class ArticleController extends Controller
 
         /** @var Article $model */
         $model = Article::query()->create(Arr::only($params, ['title', 'description', 'body']));
+
         $model->author()->associate(auth()->id());
-        $tags = collect($params['tagList'])->map(static fn(string $x) => new Tag(['name' => $x]));
+        // updateOrCreate uses MERGE under the hood.
+        $tags = collect($params['tagList'])
+            ->map(static fn(string $x) => Tag::query()->updateOrCreate(['name' => $x]));
+
         $model->tags()->saveMany($tags);
 
         return (new ArticleResource($model))
@@ -69,18 +73,19 @@ class ArticleController extends Controller
             ->setStatusCode(201);
     }
 
-    public function deleteArticle(Request $request, string $slug): JsonResponse
+    public function deleteArticle(Article $article): JsonResponse
     {
-        Gate::authorize('change-article', $slug);
+        $this->authorize('delete', $article);
 
-        Article::destroy($slug);
+        Article::destroy($article->slug);
 
         return response()->json();
     }
 
     public function updateArticle(Request $request, Article $article): ArticleResource
     {
-        // TODO - make sure only authors can change their own article
+        $this->authorize('update', $article);
+
         $parameters = $request->json('article');
 
         $article->update(Arr::only($parameters, ['description', 'body', 'title']));

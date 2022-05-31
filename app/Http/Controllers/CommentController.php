@@ -36,6 +36,8 @@ class CommentController extends Controller
 
     public function uncomment(Article $slug, Comment $comment): JsonResponse
     {
+        $this->authorize('delete', $comment);
+
         $comment->article()->dissociate();
 
         return response()->json();

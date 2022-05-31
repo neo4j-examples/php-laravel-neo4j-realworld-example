@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\Article;
-use App\Models\User;
 use App\Models\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -23,19 +21,8 @@ class AuthServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->registerPolicies();
-
-        Gate::define('change-article', function (User $user, string $slug) {
-            /** @var Session $session */
-            $session = $this->app->get(Session::class);
-
-            return !$session->run(<<<'CYPHER'
-            MATCH (u:User {username: $user}) - [:AUTHORED] -> (a:Article {slug: $slug})
-            RETURN u
-            CYPHER, ['user' => $user->getAuthIdentifier(), 'slug' => $slug])
-                ->isEmpty();
-        });
     }
 }
