@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Article;
+use App\Models\Comment;
 use App\Models\User;
+use App\Observers\ArticleObserver;
+use App\Observers\CommentObserver;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
@@ -39,6 +43,9 @@ class AppServiceProvider extends ServiceProvider
 
              return $user;
         });
+
+        Article::observe(ArticleObserver::class);
+        Comment::observe(CommentObserver::class);
     }
 
     /**
