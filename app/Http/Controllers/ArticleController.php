@@ -25,6 +25,30 @@ class ArticleController extends Controller
         return ArticleResource::collection($pagination);
     }
 
+    public function queryArticles(Request $request): ResourceCollection
+    {
+        $query = Article::query();
+
+        if ($request->has('tag')) {
+            $query->whereRelation('tags', 'name', $request->get('tag'));
+        }
+
+        if ($request->has('author')) {
+            $query->whereRelation('tags', 'username', $request->get('author'));
+        }
+
+        if ($request->has('favorited')) {
+            $query->whereRelation('favoritedBy', 'username', $request->get('favorited'));
+        }
+
+        $perPage = $request->query('limit', 20);
+        $page = (int)($request->query('offset', 0) / $perPage);
+
+        $pagination = $query->paginate(perPage: $perPage, page: $page);
+
+        return ArticleResource::collection($pagination);
+    }
+
     public function getArticle(Article $article): ArticleResource
     {
         return new ArticleResource($article);
