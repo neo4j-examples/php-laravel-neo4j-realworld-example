@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Vinelab\NeoEloquent\Eloquent\Model;
 
+/**
+ * @property string $name
+ */
 class TagModel extends Model
 {
     use HasFactory;

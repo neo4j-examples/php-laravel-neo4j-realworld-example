@@ -15,6 +15,13 @@ use Laravel\Sanctum\HasApiTokens;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 
+/**
+ * @property string $username
+ * @property string $email
+ * @property string $bio
+ * @property string $image
+ * @property string $passwordHash
+ */
 class UserModel extends Model implements
     AuthenticatableContract,
     AuthorizableContract,
@@ -28,9 +35,11 @@ class UserModel extends Model implements
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'username',
         'email',
-        'password',
+        'bio',
+        'image',
+        'passwordHash',
     ];
 
     /**
@@ -39,17 +48,7 @@ class UserModel extends Model implements
      * @var array<int, string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
+        'passwordHash',
     ];
 
     public function getAuthIdentifier(): string
