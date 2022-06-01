@@ -4,23 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Presenters\UserJSONPresenter;
-use App\Repositories\UserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use function auth;
-use function response;
 
 class UserController extends Controller
 {
-    public function login(Request $request)
+    public function login(Request $request): UserResource
     {
         $request->validate([
             'user.email' => 'required|email:rfc',
-            'user.password' => 'required|max:255'
+            'user.password' => 'required|max:255|current_password'
         ]);
 
         $credentials = $request->json('user');
@@ -28,15 +24,17 @@ class UserController extends Controller
         /** @var User $user */
         $user = User::query()->where('email', $credentials['email'])->firstOrFail();
 
-        if (!Hash::check($credentials['password'], $user->passwordHash)) {
-            return response()->json(['errors' => ['body' => ['Invalid password']]])->setStatusCode(422);
-        }
-
         return new UserResource($user);
     }
 
     public function create(Request $request): JsonResponse
     {
+        $request->validate([
+            'user.email' => 'required|email:rfc',
+            'user.username' => 'required|string|unique:User,email|min:3|max:50',
+            'user.password' => 'required|string|max:100'
+        ]);
+
         $user = $request->json('user');
         $user['passwordHash'] = Hash::make($user['password']);
 
@@ -54,6 +52,12 @@ class UserController extends Controller
 
     public function update(Request $request): UserResource
     {
+        $request->validate([
+            'user.email' => 'required|email:rfc',
+            'user.username' => 'required|string|unique:User,email|min:3|max:50',
+            'user.password' => 'required|string|max:100'
+        ]);
+
         $requestedUser = $request->json('user');
 
         $user = User::query()->findOrFail($requestedUser['username']);

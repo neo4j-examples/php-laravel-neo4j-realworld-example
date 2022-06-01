@@ -18,6 +18,11 @@ class ArticleController extends Controller
 {
     public function listArticles(Request $request): ResourceCollection
     {
+        $request->validate([
+            'limit' => 'optional|numeric|min:1|max:200',
+            'offset' => 'optional|numeric|min:0'
+        ]);
+
         $perPage = $request->query('limit', 20);
         $page = (int)($request->query('offset', 0) / $perPage);
         $pagination = User::query()->paginate(perPage: $perPage, page: $page);
@@ -27,6 +32,11 @@ class ArticleController extends Controller
 
     public function queryArticles(Request $request): ResourceCollection
     {
+        $request->validate([
+            'limit' => 'optional|numeric|min:1|max:200',
+            'offset' => 'optional|numeric|min:0'
+        ]);
+
         $query = Article::query();
 
         if ($request->has('tag')) {
@@ -56,10 +66,17 @@ class ArticleController extends Controller
 
     public function createArticle(Request $request): JsonResponse
     {
+        $request->validate([
+            'article.title' => 'required|min:5|max:150',
+            'article.description' => 'required|string|min:0|max:255',
+            'article.body' => 'required|string|min:5|max:50000',
+            'article.tagList.*' => 'nullable|string|min:3|max:50000'
+        ]);
+
         $params = $request->json('article');
 
         /** @var Article $model */
-        $model = Article::query()->create(Arr::only($params, ['title', 'description', 'body']));
+        $model = Article::query()->create($params->all());
 
         $model->author()->associate(auth()->id());
         // updateOrCreate uses MERGE under the hood.
@@ -84,9 +101,15 @@ class ArticleController extends Controller
 
     public function updateArticle(Request $request, Article $article): ArticleResource
     {
+        $request->validate([
+            'article.title' => 'optional|string|min:5|max:150',
+            'article.description' => 'optional|string|min:0|max:255',
+            'article.body' => 'optional|string|min:5|max:50000'
+        ]);
+
         $this->authorize('update', $article);
 
-        $parameters = $request->json('article');
+        $parameters = $request->json('article')?->all();
 
         $article->update(Arr::only($parameters, ['description', 'body', 'title']));
 

@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Arr;
 use Symfony\Component\HttpFoundation\Response;
-use function auth;
 use function response;
 
 class CommentController extends Controller
@@ -22,6 +21,10 @@ class CommentController extends Controller
 
     public function comment(Request $request, Article $article): JsonResponse
     {
+        $request->validate([
+            'comment.body' => 'required|min:5|max:10000'
+        ]);
+
         $data = $request->json('comment');
 
         /** @var Comment $comment */
