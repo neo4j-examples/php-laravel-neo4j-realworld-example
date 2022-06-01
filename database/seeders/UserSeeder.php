@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use function mt_rand;
+use function random_int;
 
 class UserSeeder extends Seeder
 {
@@ -15,7 +17,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::factory()
-            ->count(100)
-            ->has()
+            ->count(20)
+            ->create();
     }
 }
