@@ -3,14 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Auth\Authenticatable;
-use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use Illuminate\Database\Eloquent\Factories\BelongsToManyRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -77,6 +76,11 @@ class User extends Model implements
     public function followers(): BelongsToMany
     {
         return $this->belongsToManyRelation(__CLASS__, '<FOLLOWING');
+    }
+
+    public function secondDegreeFollowers(): HasManyThrough
+    {
+        return $this->hasManyThroughRelation(__CLASS__, __CLASS__, '<FOLLOWING', '<FOLLOWING');
     }
 
     public function following(): BelongsToMany

@@ -10,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Gate;
 use function auth;
 use function response;
 
@@ -25,7 +24,11 @@ class ArticleController extends Controller
 
         $perPage = $request->query('limit', 20);
         $page = (int)($request->query('offset', 0) / $perPage);
-        $pagination = User::query()->paginate(perPage: $perPage, page: $page);
+
+
+        $pagination = Article::query()
+            ->with(['tags', 'author', 'favoritedBy', 'favoritedBySelf'])
+            ->paginate(perPage: $perPage, page: $page);
 
         return ArticleResource::collection($pagination);
     }
@@ -37,7 +40,7 @@ class ArticleController extends Controller
             'offset' => 'optional|numeric|min:0'
         ]);
 
-        $query = Article::query();
+        $query = Article::query()->with(['tags', 'author', 'favoritedBy', 'favoritedBySelf']);
 
         if ($request->has('tag')) {
             $query->whereRelation('tags', 'name', $request->get('tag'));

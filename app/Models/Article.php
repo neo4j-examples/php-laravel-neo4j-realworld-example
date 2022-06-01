@@ -11,6 +11,7 @@ use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Vinelab\NeoEloquent\Eloquent\Model;
 use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
+use const DATE_ATOM;
 
 /**
  * @property string $slug
@@ -36,6 +37,8 @@ class Article extends Model
 
     protected $primaryKey = 'slug';
 
+    protected $dateFormat = DATE_ATOM;
+
     public function comments(): HasMany
     {
         return $this->hasManyRelationship(Comment::class, 'HAS_COMMENT');
@@ -56,11 +59,16 @@ class Article extends Model
         return $this->belongsToManyRelation(User::class, '<FAVORITED');
     }
 
+    public function favoritedBySelf(): BelongsTo
+    {
+        // define it as a relationship so it can be eagerloaded
+        return $this->belongsToRelation(User::class, 'FAVORITED')
+            ->where('User.username', auth()->id());
+    }
+
     public function getFavoritedAttribute(): bool
     {
-        return $this->favoritedBy()
-            ->where('User.username', auth()->id())
-            ->exists();
+        return $this->favoritedBySelf !== null;
     }
 
     public function getFavoriteCountAttribute(): bool
