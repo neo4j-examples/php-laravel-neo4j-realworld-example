@@ -23,11 +23,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// todo - validation
 Route::controller(ArticleController::class)->group(function () {
-    // todo - create feed
-    Route::delete('/articles/feed', 'articleFeed')->middleware('auth');
-    Route::get('/articles', 'listArticles');
+    Route::delete('/articles/feed', 'listArticles');
+    Route::get('/articles', 'queryArticles')->middleware('auth');
     Route::post('/articles', 'createArticle')->middleware('auth');
     Route::get('/articles/{slug}', 'getArticle');
     Route::put('/articles/{slug}', 'updateArticle')->middleware('auth');

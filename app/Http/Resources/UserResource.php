@@ -13,6 +13,8 @@ use function time;
  */
 class UserResource extends JsonResource
 {
+    public static $wrap = 'user';
+
     public function toArray($request): array
     {
         $jwt = $this->createToken();

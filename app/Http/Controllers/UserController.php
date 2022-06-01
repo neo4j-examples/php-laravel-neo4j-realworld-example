@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Presenters\UserJSONPresenter;
 use App\Repositories\UserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use function auth;
 use function response;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly UserRepository $repository, private readonly UserJSONPresenter $presenter)
-    {
-    }
-
-    public function login(Request $request): JsonResponse
+    public function login(Request $request)
     {
         $request->validate([
             'user.email' => 'required|email:rfc',
@@ -33,44 +32,36 @@ class UserController extends Controller
             return response()->json(['errors' => ['body' => ['Invalid password']]])->setStatusCode(422);
         }
 
-        return response()->json(['user' => $this->presenter->presentAsUser($user)]);
+        return new UserResource($user);
     }
 
     public function create(Request $request): JsonResponse
     {
         $user = $request->json('user');
+        $user['passwordHash'] = Hash::make($user['password']);
 
-        $user = $this->repository->create($user['email'], $user['username'], $user['password']);
+        $user = User::query()->create(Arr::only($user, ['email', 'username', 'passwordHash']));
 
-        return response()
-            ->json(['user' => $this->presenter->presentAsUser($user)])
+        return (new UserResource($user))
+            ->toResponse($request)
             ->setStatusCode(201);
     }
 
-    public function get(Request $request): JsonResponse
+    public function get(): UserResource
     {
-        $user = $this->repository->findByUsername(auth()->user()?->getAuthIdentifier());
-
-        return response()
-            ->json(['user' => $this->presenter->presentAsUser($user)])
-            ->setStatusCode(200);
+        return new UserResource(Auth::user());
     }
 
-    public function update(Request $request): JsonResponse
+    public function update(Request $request): UserResource
     {
         $requestedUser = $request->json('user');
 
-        /** @var User|null $authenticatable */
-        $authenticatable = auth()->user();
-        if ($authenticatable === null ||
-            (isset($requestedUser['username']) && $authenticatable->getAuthIdentifier() !== $requestedUser['username']))
-        {
-            return response()->json()->setStatusCode(401);
-        }
+        $user = User::query()->findOrFail($requestedUser['username']);
 
-        $user = $this->repository->update($requestedUser['email'], $requestedUser['username'] , $requestedUser['bio'], $requestedUser['image']);
+        $this->authorize('update', $user);
 
-        return response()
-            ->json(['user' => $this->presenter->presentAsUser($user)]);
+        $user->update(Arr::only($requestedUser, ['email', 'username', 'image', 'bio']));
+
+        return new UserResource($user);
     }
 }

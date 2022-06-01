@@ -15,6 +15,8 @@ class ProfileController extends Controller
 
     public function followProfile(User $user): ProfileResource
     {
+        $this->authorize('follow', $user);
+
         $user->followers()->attach(auth()->id());
 
         return new ProfileResource($user);
