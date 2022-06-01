@@ -26,7 +26,7 @@ class UserResource extends JsonResource
         ];
     }
 
-    private function createToken(User $user): string
+    private function createToken(): string
     {
         $key = Config::get('app.key');
         $payload = array(
@@ -36,10 +36,10 @@ class UserResource extends JsonResource
             "nbf" => time(),
             "exp" => time() + (24 * 60 * 60),
             "user" => [
-                'email' => $user->email,
-                'username' => $user->username,
-                'bio' => $user->bio,
-                'image' => $user->image
+                'email' => $this->email,
+                'username' => $this->username,
+                'bio' => $this->bio,
+                'image' => $this->image
             ]
         );
 
