@@ -14,7 +14,7 @@
         "laravel/tinker": "^2.5",
         "laudis/neo4j-php-client": "^2.4",
         "spatie/laravel-sluggable": "^3.4",
-        "vinelab/neoeloquent": "dev-dsl-rework",
+        "vinelab/neoeloquent": "*",
         "wikibase-solutions/php-cypher-dsl": "dev-main"
     },
     "require-dev": {
@@ -37,6 +37,12 @@
             "Tests\\": "tests/"
         }
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "./NeoEloquent"
+        }
+    ],
     "scripts": {
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

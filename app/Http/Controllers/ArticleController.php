@@ -79,7 +79,7 @@ class ArticleController extends Controller
         $params = $request->json('article');
 
         /** @var Article $model */
-        $model = Article::query()->create($params->all());
+        $model = Article::query()->create($params);
 
         $model->author()->associate(auth()->id());
         // updateOrCreate uses MERGE under the hood.

@@ -1,3 +1,6 @@
 [submodule "frontend"]
 	path = frontend
 	url = git@github.com:AlexBrohshtut/vue-ts-realworld-app.git
+[submodule "NeoEloquent"]
+	path = NeoEloquent
+	url = git@github.com:Vinelab/NeoEloquent.git
