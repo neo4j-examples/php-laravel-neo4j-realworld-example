@@ -35,6 +35,8 @@ class User extends Model implements
         Authorizable,
         CanResetPassword;
 
+    protected $primaryKey = 'username';
+
     /**
      * The attributes that are mass assignable.
      *

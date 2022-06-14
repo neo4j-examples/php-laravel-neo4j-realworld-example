@@ -9,20 +9,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
+use function response;
 
 class UserController extends Controller
 {
-    public function login(Request $request): UserResource
+    public function login(Request $request): UserResource|JsonResponse
     {
         $request->validate([
             'user.email' => 'required|email:rfc',
-            'user.password' => 'required|max:255|current_password'
+            'user.password' => 'required|max:255'
         ]);
 
         $credentials = $request->json('user');
+        $user = User::query()->where('email', $credentials['email'])->first();
 
-        /** @var User $user */
-        $user = User::query()->where('email', $credentials['email'])->firstOrFail();
+        if ($user === null || !Hash::check($credentials['password'], $user->getAttribute('passwordHash'))) {
+            return response()->json('Email or password is incorrect')->setStatusCode(422);
+        }
 
         return new UserResource($user);
     }
@@ -32,7 +36,7 @@ class UserController extends Controller
         $request->validate([
             'user.email' => 'required|email:rfc',
             'user.username' => 'required|string|unique:User,email|min:3|max:50',
-            'user.password' => 'required|string|max:100'
+            'user.password' => ['required', ...$this->passwordValidationRules()]
         ]);
 
         $user = $request->json('user');
@@ -53,9 +57,9 @@ class UserController extends Controller
     public function update(Request $request): UserResource
     {
         $request->validate([
-            'user.email' => 'required|email:rfc',
+            'user.email' => 'email:rfc',
             'user.username' => 'required|string|unique:User,email|min:3|max:50',
-            'user.password' => 'required|string|max:100'
+            'user.password' => $this->passwordValidationRules()
         ]);
 
         $requestedUser = $request->json('user');
@@ -64,8 +68,29 @@ class UserController extends Controller
 
         $this->authorize('update', $user);
 
-        $user->update(Arr::only($requestedUser, ['email', 'username', 'image', 'bio']));
+        $values = Arr::only($requestedUser, ['email', 'image', 'bio']);
+        if (array_key_exists('password', $requestedUser)) {
+            $values['passwordHash'] = Hash::make($requestedUser['password']);
+        }
+
+        $user->update($values);
 
         return new UserResource($user);
+    }
+
+    /**
+     * @return array
+     */
+    private function passwordValidationRules(): array
+    {
+        return [
+            'string',
+            'max:100',
+            Password::min(8)
+                ->mixedCase()
+                ->numbers()
+                ->symbols()
+                ->uncompromised()
+        ];
     }
 }

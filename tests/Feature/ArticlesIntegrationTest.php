@@ -13,9 +13,6 @@ class ArticlesIntegrationTest extends TestCase
 {
     private static ?string $token = null;
 
-    /**
-     * @doesNotPerformAssertions
-     */
     public function testCreateUser(): void
     {
         $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
@@ -24,16 +21,16 @@ class ArticlesIntegrationTest extends TestCase
             'user' => [
                 'username' => 'bob',
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
-        ]);
+        ])->assertStatus(201);
 
         $response = $this->postJson('/api/users/login', [
             'user' => [
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ],
-        ]);
+        ])->assertStatus(200);
 
         self::$token = 'Bearer ' . $response->json('user.token');
 
@@ -45,7 +42,7 @@ class ArticlesIntegrationTest extends TestCase
                 'bio' => 'programming "cewebrity", missing my girl alice, morning person',
                 'image' => '/bob.png'
             ]
-        ], ['Authorization' => self::$token]);
+        ], ['Authorization' => self::$token])->assertStatus(200);
     }
 
     /**
