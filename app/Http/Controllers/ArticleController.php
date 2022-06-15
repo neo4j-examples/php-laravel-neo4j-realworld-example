@@ -86,7 +86,7 @@ class ArticleController extends Controller
         $tags = collect($params['tagList'])
             ->map(static fn(string $x) => Tag::query()->updateOrCreate(['name' => $x]));
 
-        $model->tags()->saveMany($tags);
+//        $model->tags()->saveMany($tags);
 
         return (new ArticleResource($model))
             ->toResponse($request)
