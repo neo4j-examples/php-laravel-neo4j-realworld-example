@@ -35,7 +35,7 @@ jobs:
       NEO4J_PASSWORD: password
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -69,7 +69,7 @@ jobs:
           timeout 30 sh -c 'until curl -sf http://127.0.0.1:8000/api/tags > /dev/null; do sleep 1; done'
 
       - name: Check out the RealWorld API spec
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: gothinkster/realworld
           ref: ebbcdeb8d55b42a3a613c787560498b8ef10003f
