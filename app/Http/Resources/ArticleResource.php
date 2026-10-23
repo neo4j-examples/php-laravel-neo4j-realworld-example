@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Models\Article;
 use Illuminate\Http\Resources\Json\JsonResource;
-use const DATE_ATOM;
 
 /**
  * @mixin Article
@@ -20,7 +19,7 @@ class ArticleResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'body' => $this->body,
-            'tagList' => $this->tags->pluck('name'),
+            'tagList' => $this->tags->pluck('name')->sort()->values(),
             'createdAt' => $this->createdAt,
             'updatedAt' => $this->updatedAt,
             'favorited' => $this->favorited,

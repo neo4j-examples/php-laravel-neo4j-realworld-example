@@ -6,40 +6,34 @@ use App\Http\Resources\ArticleCollection;
 use App\Http\Resources\ArticleResource;
 use App\Models\Article;
 use App\Models\Tag;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
-use function intdiv;
+use Illuminate\Support\Facades\Auth;
+use function array_key_exists;
 use function response;
 
 class ArticleController extends Controller
 {
-    public function listArticles(Request $request): ArticleCollection
+    public function feed(Request $request): ArticleCollection
     {
-        $request->validate([
-            'limit' => 'sometimes|numeric|min:1|max:200',
-            'offset' => 'sometimes|numeric|min:0'
-        ]);
+        /** @var User $user */
+        $user = Auth::user();
+        $following = $user->following()->pluck('username')->all();
 
-        $perPage = (int) $request->query('limit', 20);
-        $page = intdiv((int) $request->query('offset', 0), $perPage) + 1;
+        $query = $this->articleQuery()
+            ->matchRelationship('<AUTHORED', 'User', 'authored', 'author', static fn ($q) => $q->whereIn('username', $following));
 
-
-        $pagination = Article::query()
-            ->with(['tags', 'author', 'favoritedBy', 'favoritedBySelf'])
-            ->paginate(perPage: $perPage, page: $page);
-
-        return new ArticleCollection($pagination);
+        return $this->paginate($request, $query);
     }
 
     public function queryArticles(Request $request): ArticleCollection
     {
-        $request->validate([
-            'limit' => 'sometimes|numeric|min:1|max:200',
-            'offset' => 'sometimes|numeric|min:0'
-        ]);
-
-        $query = Article::query()->with(['tags', 'author', 'favoritedBy', 'favoritedBySelf']);
+        $query = $this->articleQuery();
 
         if ($request->has('tag')) {
             $query->matchRelationship('<TAGGED', 'Tag', 'tagged', 'tag', static fn ($q) => $q->where('name', $request->get('tag')));
@@ -53,12 +47,7 @@ class ArticleController extends Controller
             $query->matchRelationship('<FAVORITED', 'User', 'favorite', 'favoriter', static fn ($q) => $q->where('username', $request->get('favorited')));
         }
 
-        $perPage = (int) $request->query('limit', 20);
-        $page = intdiv((int) $request->query('offset', 0), $perPage) + 1;
-
-        $pagination = $query->paginate(perPage: $perPage, page: $page);
-
-        return new ArticleCollection($pagination);
+        return $this->paginate($request, $query);
     }
 
     public function getArticle(Article $article): ArticleResource
@@ -69,50 +58,90 @@ class ArticleController extends Controller
     public function createArticle(Request $request): JsonResponse
     {
         $request->validate([
-            'article.title' => 'required|min:5|max:150',
-            'article.description' => 'required|string|min:0|max:255',
-            'article.body' => 'required|string|min:5|max:50000',
-            'article.tagList.*' => 'nullable|string|min:3|max:50000'
+            'article.title' => 'required|string|max:150',
+            'article.description' => 'required|string|max:255',
+            'article.body' => 'required|string|max:50000',
+            'article.tagList' => 'sometimes|array',
+            'article.tagList.*' => 'string|min:1|max:255',
         ]);
 
         $params = $request->json('article');
 
         /** @var Article $model */
-        $model = Article::query()->create($params);
+        $model = Article::query()->create(Arr::only($params, ['title', 'description', 'body']));
 
-        $tags = collect($params['tagList'] ?? [])
-            ->map(static fn(string $x) => Tag::query()->firstOrCreate(['name' => $x]));
-
-        $model->tags()->attach($tags->pluck('id')->all());
+        $model->tags()->attach($this->tagIds($params['tagList'] ?? []));
 
         return (new ArticleResource($model))
             ->toResponse($request)
             ->setStatusCode(201);
     }
 
-    public function deleteArticle(Article $article): JsonResponse
+    public function deleteArticle(Article $article): Response
     {
         $this->authorize('delete', $article);
 
+        $article->comments->each->delete();
         $article->delete();
 
-        return response()->json();
+        return response()->noContent();
     }
 
     public function updateArticle(Request $request, Article $article): ArticleResource
     {
-        $request->validate([
-            'article.title' => 'sometimes|string|min:5|max:150',
-            'article.description' => 'sometimes|string|min:0|max:255',
-            'article.body' => 'sometimes|string|min:5|max:50000'
-        ]);
-
         $this->authorize('update', $article);
+
+        $request->validate([
+            'article.title' => 'sometimes|required|string|max:150',
+            'article.description' => 'sometimes|required|string|max:255',
+            'article.body' => 'sometimes|required|string|max:50000',
+            'article.tagList' => 'sometimes|array',
+            'article.tagList.*' => 'string|min:1|max:255',
+        ]);
 
         $parameters = $request->json('article', []);
 
         $article->update(Arr::only($parameters, ['description', 'body', 'title']));
 
+        if (array_key_exists('tagList', $parameters)) {
+            $article->tags()->sync($this->tagIds($parameters['tagList']));
+            $article->unsetRelation('tags');
+        }
+
         return new ArticleResource($article);
+    }
+
+    private function articleQuery(): Builder
+    {
+        return Article::query()->with(['tags', 'author', 'favoritedBy', 'favoritedBySelf']);
+    }
+
+    private function paginate(Request $request, Builder $query): ArticleCollection
+    {
+        $request->validate([
+            'limit' => 'sometimes|integer|min:1|max:200',
+            'offset' => 'sometimes|integer|min:0'
+        ]);
+
+        $limit = (int) $request->query('limit', 20);
+        $offset = (int) $request->query('offset', 0);
+
+        $total = (clone $query)->count();
+        $articles = $query->orderByDesc('createdAt')->skip($offset)->take($limit)->get();
+
+        return new ArticleCollection(new LengthAwarePaginator($articles, $total, $limit));
+    }
+
+    /**
+     * @param list<string> $names
+     * @return list<string>
+     */
+    private function tagIds(array $names): array
+    {
+        return collect($names)
+            ->unique()
+            ->map(static fn (string $name) => Tag::query()->firstOrCreate(['name' => $name])->id)
+            ->values()
+            ->all();
     }
 }

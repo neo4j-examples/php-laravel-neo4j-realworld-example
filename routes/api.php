@@ -4,8 +4,8 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TagController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,12 +19,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
 Route::controller(ArticleController::class)->group(function () {
-    Route::delete('/articles/feed', 'listArticles');
+    Route::get('/articles/feed', 'feed')->middleware('auth');
     Route::get('/articles', 'queryArticles');
     Route::post('/articles', 'createArticle')->middleware('auth');
     Route::get('/articles/{article}', 'getArticle');
@@ -56,4 +52,4 @@ Route::controller(FavoriteController::class)->group(function () {
     Route::delete('/articles/{article}/favorite', 'unfavorite')->middleware('auth');
 });
 
-// todo - create tag feed
+Route::get('/tags', [TagController::class, 'listTags']);

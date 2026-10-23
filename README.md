@@ -49,7 +49,12 @@ Install dependencies and generate the application key:
 > php artisan key:generate
 
 Create the Neo4j constraints and indexes:
-> php artisan neo4j:indexes
+> docker compose exec -T neo4j cypher-shell -u neo4j -p password < database/neo4j/schema.cypher
+
+Optionally load demo data. The users `alice@example.com`, `bob@example.com` and `carol@example.com` can log in with the password `password123`:
+> docker compose exec -T neo4j cypher-shell -u neo4j -p password < database/neo4j/seed.cypher
+
+Both scripts are plain Cypher and safe to run again. Without Docker, run them with `cypher-shell -a bolt://localhost:7687 -u neo4j -p password -f <file>` or paste them into Neo4j Browser. `php artisan migrate` and `php artisan db:seed` are not supported yet (see [TODO](TODO)).
 
 Run app:
 > php artisan serve
@@ -58,3 +63,8 @@ Run app:
 
 The feature tests run against the Neo4j database configured in `.env`. They delete every node in that database, so do not point them at data you want to keep.
 > vendor/bin/phpunit
+
+The app also passes the official [RealWorld API spec](https://github.com/gothinkster/realworld/tree/main/specs/api) tests, which CI runs with [Hurl](https://hurl.dev). The suite sends more than 60 requests a minute, so set `API_RATE_LIMIT=1000` in `.env` before running it locally:
+> git clone --depth 1 https://github.com/gothinkster/realworld.git /tmp/realworld
+>
+> HOST=http://localhost:8000 /tmp/realworld/specs/api/run-api-tests-hurl.sh

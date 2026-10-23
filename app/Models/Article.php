@@ -6,10 +6,8 @@ use App\Models\Relations\Relationship;
 use App\Models\Relations\SingleRelationship;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-use const DATE_ATOM;
 
 /**
  * @property string $id
@@ -29,7 +27,6 @@ use const DATE_ATOM;
  */
 class Article extends Node
 {
-    use HasFactory;
     use HasSlug;
 
     public const CREATED_AT = 'createdAt';
@@ -38,7 +35,7 @@ class Article extends Node
 
     protected $fillable = ['title', 'description', 'body'];
 
-    protected $dateFormat = DATE_ATOM;
+    protected $dateFormat = 'Y-m-d\TH:i:s.vP';
 
     public function getRouteKeyName(): string
     {

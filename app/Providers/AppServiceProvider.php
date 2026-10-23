@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use UnexpectedValueException;
-use function str_replace;
+use function preg_replace;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,15 +35,14 @@ class AppServiceProvider extends ServiceProvider
              }
 
              try {
-                 $token = (array) JWT::decode(str_replace('Bearer ', '', $token), new Key(Config::get('app.key'), 'HS256'));
+                 $token = (array) JWT::decode(preg_replace('/^(Token|Bearer) /', '', $token), new Key(Config::get('app.key'), 'HS256'));
              } catch (UnexpectedValueException|DomainException|InvalidArgumentException) {
                  return null;
              }
 
-             $user = new User();
-             $user->setRawAttributes((array) $token['user']);
+             $username = ((array) ($token['user'] ?? []))['username'] ?? null;
 
-             return $user;
+             return $username === null ? null : User::query()->find($username);
         });
     }
 

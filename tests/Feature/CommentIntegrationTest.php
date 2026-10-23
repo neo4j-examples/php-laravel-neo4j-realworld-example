@@ -13,7 +13,7 @@ class CommentIntegrationTest extends TestCase
 {
     private static ?string $token = null;
 
-    private static ?string $commentId = null;
+    private static ?int $commentId = null;
 
     #[DoesNotPerformAssertions]
     public function testFillDatabase(): void
@@ -84,7 +84,7 @@ class CommentIntegrationTest extends TestCase
         $response->assertStatus(201);
 
         $response->assertJson(static function (AssertableJson $json) {
-            $json->whereType('comment.id', 'string')
+            $json->whereType('comment.id', 'integer')
                 ->whereType('comment.createdAt', 'string')
                 ->whereType('comment.updatedAt', 'string')
                 ->where('comment.body', 'Great blog post!')
@@ -102,6 +102,6 @@ class CommentIntegrationTest extends TestCase
     {
         $response = $this->deleteJson('/api/articles/test-article/comments/' . self::$commentId, [], ['Authorization' => self::$token]);
 
-        $response->assertStatus(200);
+        $response->assertNoContent();
     }
 }

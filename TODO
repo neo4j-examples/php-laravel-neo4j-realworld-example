@@ -1,0 +1,5 @@
+- Support `php artisan migrate`: replace database/neo4j/schema.cypher with Laravel migrations once
+  neo4j-php/neo4j-laravel supports them. With neo4j-laravel 0.0.1 on Laravel 13, `artisan migrate`
+  crashes in the package's schema code.
+- Support `php artisan db:seed`: replace database/neo4j/seed.cypher with Laravel seeders and factories.
+  The previous Eloquent seeders failed on neo4j-laravel 0.0.1 and were removed.

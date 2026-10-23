@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   phpunit:
-    name: PHPUnit (PHP 8.3, Neo4j 5)
+    name: Tests (PHP 8.3, Neo4j 5)
     runs-on: ubuntu-latest
 
     services:
@@ -52,7 +52,36 @@ jobs:
           php artisan key:generate
 
       - name: Create Neo4j constraints and indexes
-        run: php artisan neo4j:indexes
+        run: docker exec -i ${{ job.services.neo4j.id }} cypher-shell -u neo4j -p password < database/neo4j/schema.cypher
 
       - name: Run the test suite
         run: vendor/bin/phpunit
+
+      - name: Check the demo data script
+        run: |
+          docker exec -i ${{ job.services.neo4j.id }} cypher-shell -u neo4j -p password < database/neo4j/seed.cypher
+          docker exec -i ${{ job.services.neo4j.id }} cypher-shell -u neo4j -p password < database/neo4j/seed.cypher
+
+      - name: Start the API
+        run: |
+          echo 'API_RATE_LIMIT=1000' >> .env
+          php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/serve.log 2>&1 &
+          timeout 30 sh -c 'until curl -sf http://127.0.0.1:8000/api/tags > /dev/null; do sleep 1; done'
+
+      - name: Check out the RealWorld API spec
+        uses: actions/checkout@v4
+        with:
+          repository: gothinkster/realworld
+          ref: ebbcdeb8d55b42a3a613c787560498b8ef10003f
+          path: realworld
+          sparse-checkout: specs/api/hurl
+
+      - name: Run the RealWorld API spec
+        working-directory: realworld/specs/api/hurl
+        run: |
+          docker run --rm --network host -v "$PWD:/hurl:ro" ghcr.io/orange-opensource/hurl:7.1.0 \
+            --test --jobs 1 --variable host=http://127.0.0.1:8000 --variable "uid=$(date +%s)" $(ls *.hurl | sed 's#^#/hurl/#')
+
+      - name: Show the API log
+        if: failure()
+        run: cat storage/logs/serve.log storage/logs/laravel.log || true

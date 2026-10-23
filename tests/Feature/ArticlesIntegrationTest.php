@@ -109,7 +109,7 @@ class ArticlesIntegrationTest extends TestCase
         $response->assertJson(static function (AssertableJson $json) {
             $json->where('articles.0.title', 'Test article')
                 ->where('articles.0.description', 'Simple description')
-                ->where('articles.0.body', 'This is a short blogpost about testing')
+                ->missing('articles.0.body')
                 ->where('articles.0.tagList', function (Collection $x) {
                     self::assertEqualsCanonicalizing(['ignore', 'test'], $x->toArray());
 
@@ -195,7 +195,7 @@ class ArticlesIntegrationTest extends TestCase
     {
         $response = $this->delete('/api/articles/test-article', [], ['Authorization' => self::$token]);
 
-        $response->assertStatus(200);
+        $response->assertNoContent();
     }
 
     #[Depends('testDelete')]

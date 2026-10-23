@@ -69,8 +69,7 @@ final class UserTest extends TestCase
         $response->assertStatus(422);
 
         $response->assertJson(static function (AssertableJson $json) {
-            $json->where('errors.body', 'The user.email must be a valid email address.
-The user.password field is required.');
+            $json->where('errors.password', ["can't be blank"]);
         });
     }
 
