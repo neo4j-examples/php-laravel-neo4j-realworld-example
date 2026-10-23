@@ -25,14 +25,36 @@ The frontend can be freely chosen.
 
 # Getting started
 
+Requirements:
+
+- PHP 8.3 or newer with Composer 2
+- Neo4j 5 (the included `docker-compose.yml` starts one)
+
 Copy .env.example to actual .env file
 > cp .env.example .env
 
-Change the bolt_dsn value if needed to connect to the correct database
-> BOLT_DSN=bolt://neo4j:test@localhost
+Change the Neo4j connection values if needed to connect to the correct database. Use a `bolt://` URL when connecting to a single Neo4j server.
+> NEO4J_URL=bolt://localhost:7687
+>
+> NEO4J_USERNAME=neo4j
+>
+> NEO4J_PASSWORD=password
 
-Install dependencies:
+Start Neo4j:
+> docker compose up -d
+
+Install dependencies and generate the application key:
 > composer install
+>
+> php artisan key:generate
+
+Create the Neo4j constraints and indexes:
+> php artisan neo4j:indexes
 
 Run app:
 > php artisan serve
+
+# Running the tests
+
+The feature tests run against the Neo4j database configured in `.env`. They delete every node in that database, so do not point them at data you want to keep.
+> vendor/bin/phpunit
