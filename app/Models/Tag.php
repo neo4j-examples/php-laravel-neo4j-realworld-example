@@ -2,22 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Vinelab\NeoEloquent\Eloquent\Model;
+use App\Models\Relations\Relationship;
 
 /**
  * @property string $name
  */
-class Tag extends Model
+class Tag extends Node
 {
-    use HasFactory;
-
     protected $fillable = ['name'];
 
-    public function articles(): BelongsToMany
+    public function articles(): Relationship
     {
-        return $this->belongsToManyRelation(Article::class, 'TAGGED>')
-            ->withTimestamps();
+        return $this->matchRelationship(Article::class, 'TAGGED>');
     }
 }

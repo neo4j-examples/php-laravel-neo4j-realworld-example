@@ -7,14 +7,10 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use App\Models\Relations\Relationship;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
 
 /**
  * @property string $username
@@ -23,13 +19,12 @@ use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
  * @property string $image
  * @property string $passwordHash
  */
-class User extends Model implements
+class User extends Node implements
     AuthenticatableContract,
     AuthorizableContract,
     CanResetPasswordContract
 {
     use HasApiTokens,
-        HasFactory,
         Notifiable,
         Authenticatable,
         Authorizable,
@@ -65,28 +60,23 @@ class User extends Model implements
         return $this->username;
     }
 
-    public function writtenArticles(): HasMany
+    public function writtenArticles(): Relationship
     {
-        return $this->hasManyRelationship(Article::class, 'AUTHORED');
+        return $this->matchRelationship(Article::class, 'AUTHORED>');
     }
 
-    public function favorited(): BelongsToMany
+    public function favorited(): Relationship
     {
-        return $this->belongsToManyRelation(Article::class, 'FAVORITED>');
+        return $this->matchRelationship(Article::class, 'FAVORITED>');
     }
 
-    public function followers(): BelongsToMany
+    public function followers(): Relationship
     {
-        return $this->belongsToManyRelation(__CLASS__, '<FOLLOWING');
+        return $this->matchRelationship(__CLASS__, '<FOLLOWING');
     }
 
-    public function secondDegreeFollowers(): HasManyThrough
+    public function following(): Relationship
     {
-        return $this->hasManyThroughRelation(__CLASS__, __CLASS__, '<FOLLOWING', '<FOLLOWING');
-    }
-
-    public function following(): BelongsToMany
-    {
-        return $this->belongsToManyRelation(__CLASS__, 'FOLLOWING>');
+        return $this->matchRelationship(__CLASS__, 'FOLLOWING>');
     }
 }

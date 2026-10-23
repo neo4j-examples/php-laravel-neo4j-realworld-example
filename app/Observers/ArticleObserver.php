@@ -9,12 +9,11 @@ class ArticleObserver
 {
     public function created(Article $comment): void
     {
-        $comment->author()->associate(Auth::user());
-        $comment->tags()->detach($comment->tags);
+        $comment->author()->attach(Auth::id());
     }
 
     public function deleting(Article $comment): void
     {
-        $comment->author()->dissociate();
+        $comment->author()->detach();
     }
 }

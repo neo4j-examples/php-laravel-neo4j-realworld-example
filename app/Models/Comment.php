@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Relations\SingleRelationship;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Vinelab\NeoEloquent\Eloquent\Model;
-use const DATE_ATOM;
+use Illuminate\Support\Facades\DB;
+use function ctype_digit;
+use function is_int;
 
 /**
  * @property int $id
@@ -17,21 +17,42 @@ use const DATE_ATOM;
  * @property User $author
  * @property Article $article@
  */
-class Comment extends Model
+class Comment extends Node
 {
-    use HasFactory;
+    public const CREATED_AT = 'createdAt';
 
-    protected $dateFormat = DATE_ATOM;
+    public const UPDATED_AT = 'updatedAt';
+
+    protected $dateFormat = 'Y-m-d\TH:i:s.vP';
 
     protected $fillable = ['body'];
 
-    public function author(): BelongsTo
+    protected static function booted(): void
     {
-        return $this->belongsToRelation(User::class, 'AUTHORED');
+        // The RealWorld spec requires integer comment ids, so they come from a sequence node instead of a UUID.
+        static::creating(static function (Comment $comment): void {
+            $comment->setAttribute($comment->getKeyName(), (int) DB::connection('neo4j')->selectOne(
+                "MERGE (s:Sequence {name: 'Comment'}) ON CREATE SET s.value = 0 SET s.value = s.value + 1 RETURN s.value AS value"
+            )->value);
+        });
     }
 
-    public function article(): BelongsTo
+    public function resolveRouteBinding($value, $field = null)
     {
-        return $this->belongsToRelation(Article::class, 'HAS_COMMENT');
+        if (!is_int($value) && !ctype_digit((string) $value)) {
+            return null;
+        }
+
+        return parent::resolveRouteBinding((int) $value, $field);
+    }
+
+    public function author(): SingleRelationship
+    {
+        return $this->singleRelationship(User::class, '<AUTHORED');
+    }
+
+    public function article(): SingleRelationship
+    {
+        return $this->singleRelationship(Article::class, '<HAS_COMMENT');
     }
 }

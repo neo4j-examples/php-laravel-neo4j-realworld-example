@@ -25,14 +25,46 @@ The frontend can be freely chosen.
 
 # Getting started
 
+Requirements:
+
+- PHP 8.3.36+, 8.4.27+ or 8.5.12+ with Composer 2. Earlier patch releases are vulnerable to CVE-2026-109618 and CVE-2026-109619, and `composer install` refuses to run on them.
+- Neo4j 5 (the included `docker-compose.yml` starts one)
+
 Copy .env.example to actual .env file
 > cp .env.example .env
 
-Change the bolt_dsn value if needed to connect to the correct database
-> BOLT_DSN=bolt://neo4j:test@localhost
+Change the Neo4j connection values if needed to connect to the correct database. Use a `bolt://` URL when connecting to a single Neo4j server.
+> NEO4J_URL=bolt://localhost:7687
+>
+> NEO4J_USERNAME=neo4j
+>
+> NEO4J_PASSWORD=password
 
-Install dependencies:
+Start Neo4j:
+> docker compose up -d
+
+Install dependencies and generate the application key:
 > composer install
+>
+> php artisan key:generate
+
+Create the Neo4j constraints and indexes:
+> docker compose exec -T neo4j cypher-shell -u neo4j -p password < database/neo4j/schema.cypher
+
+Optionally load demo data. The users `alice@example.com`, `bob@example.com` and `carol@example.com` can log in with the password `password123`:
+> docker compose exec -T neo4j cypher-shell -u neo4j -p password < database/neo4j/seed.cypher
+
+Both scripts are plain Cypher and safe to run again. Without Docker, run them with `cypher-shell -a bolt://localhost:7687 -u neo4j -p password -f <file>` or paste them into Neo4j Browser. `php artisan migrate` and `php artisan db:seed` are not supported yet (see [TODO](TODO)).
 
 Run app:
 > php artisan serve
+
+# Running the tests
+
+The feature tests run against the Neo4j database configured in `.env`. They delete every node in that database, so do not point them at data you want to keep.
+> vendor/bin/phpunit
+
+The app also passes the official [RealWorld API spec](https://github.com/gothinkster/realworld/tree/main/specs/api) tests, which CI runs with [Hurl](https://hurl.dev). The suite sends more than 60 requests a minute, so set `API_RATE_LIMIT=1000` in `.env` before running it locally:
+> git clone --depth 1 https://github.com/gothinkster/realworld.git /tmp/realworld
+>
+> HOST=http://localhost:8000 /tmp/realworld/specs/api/run-api-tests-hurl.sh

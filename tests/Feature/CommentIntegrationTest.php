@@ -4,32 +4,34 @@ namespace Tests\Feature;
 
 use Illuminate\Support\Collection;
 use Illuminate\Testing\Fluent\AssertableJson;
-use Laudis\Neo4j\Basic\Session;
+use Laudis\Neo4j\Contracts\SessionInterface;
+use PHPUnit\Framework\Attributes\Depends;
+use PHPUnit\Framework\Attributes\DoesNotPerformAssertions;
 use Tests\TestCase;
 
 class CommentIntegrationTest extends TestCase
 {
     private static ?string $token = null;
 
-    /**
-     * @doesNotPerformAssertions
-     */
+    private static ?int $commentId = null;
+
+    #[DoesNotPerformAssertions]
     public function testFillDatabase(): void
     {
-        $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
+        $this->app->get(SessionInterface::class)->run('MATCH (x) DETACH DELETE x');
 
         $this->postJson('/api/users', [
             'user' => [
                 'username' => 'bob',
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
 
         $response = $this->postJson('/api/users/login', [
             'user' => [
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ],
         ]);
 
@@ -74,17 +76,15 @@ class CommentIntegrationTest extends TestCase
         ]);
     }
 
-    /**
-     * @depends testFillDatabase
-     */
+    #[Depends('testFillDatabase')]
     public function testComment(): void
     {
         $response = $this->postJson('/api/articles/test-article/comments', ['comment' => ['body' => 'Great blog post!']], ['Authorization' => self::$token]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(201);
 
         $response->assertJson(static function (AssertableJson $json) {
-            $json->where('comment.id', 0)
+            $json->whereType('comment.id', 'integer')
                 ->whereType('comment.createdAt', 'string')
                 ->whereType('comment.updatedAt', 'string')
                 ->where('comment.body', 'Great blog post!')
@@ -93,15 +93,15 @@ class CommentIntegrationTest extends TestCase
                 ->where('comment.author.image', '/bob.png')
                 ->where('comment.author.following', false);
         });
+
+        self::$commentId = $response->json('comment.id');
     }
 
-    /**
-     * @depends testComment
-     */
+    #[Depends('testComment')]
     public function testUncomment(): void
     {
-        $response = $this->deleteJson('/api/articles/test-article/comments/0', [], ['Authorization' => self::$token]);
+        $response = $this->deleteJson('/api/articles/test-article/comments/' . self::$commentId, [], ['Authorization' => self::$token]);
 
-        $response->assertStatus(200);
+        $response->assertNoContent();
     }
 }

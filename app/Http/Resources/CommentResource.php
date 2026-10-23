@@ -19,7 +19,7 @@ class CommentResource extends JsonResource
             'createdAt' => $this->createdAt,
             'updatedAt' => $this->updatedAt,
             'body' => $this->body,
-            'author' => new UserResource($this->author)
+            'author' => new ProfileResource($this->author)
         ];
     }
 }

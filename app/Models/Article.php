@@ -2,18 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Relations\Relationship;
+use App\Models\Relations\SingleRelationship;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-use Vinelab\NeoEloquent\Eloquent\Model;
-use Vinelab\NeoEloquent\Eloquent\Relations\HasMany;
-use const DATE_ATOM;
 
 /**
+ * @property string $id
  * @property string $slug
  * @property string $title
  * @property string $description
@@ -28,42 +25,48 @@ use const DATE_ATOM;
  * @property int $favoriteCount
  * @property bool $favorited
  */
-class Article extends Model
+class Article extends Node
 {
-    use HasFactory;
     use HasSlug;
+
+    public const CREATED_AT = 'createdAt';
+
+    public const UPDATED_AT = 'updatedAt';
 
     protected $fillable = ['title', 'description', 'body'];
 
-    protected $primaryKey = 'slug';
+    protected $dateFormat = 'Y-m-d\TH:i:s.vP';
 
-    protected $dateFormat = DATE_ATOM;
-
-    public function comments(): HasMany
+    public function getRouteKeyName(): string
     {
-        return $this->hasManyRelationship(Comment::class, 'HAS_COMMENT');
+        return 'slug';
     }
 
-    public function tags(): BelongsToMany
+    public function comments(): Relationship
     {
-        return $this->belongsToManyRelation(Tag::class, '<TAGGED');
+        return $this->matchRelationship(Comment::class, 'HAS_COMMENT>');
     }
 
-    public function author(): BelongsTo
+    public function tags(): Relationship
     {
-        return $this->belongsToRelation(User::class, 'AUTHORED');
+        return $this->matchRelationship(Tag::class, '<TAGGED');
     }
 
-    public function favoritedBy(): BelongsToMany
+    public function author(): SingleRelationship
     {
-        return $this->belongsToManyRelation(User::class, '<FAVORITED');
+        return $this->singleRelationship(User::class, '<AUTHORED');
     }
 
-    public function favoritedBySelf(): BelongsTo
+    public function favoritedBy(): Relationship
+    {
+        return $this->matchRelationship(User::class, '<FAVORITED');
+    }
+
+    public function favoritedBySelf(): SingleRelationship
     {
         // define it as a relationship so it can be eagerloaded
-        return $this->belongsToRelation(User::class, 'FAVORITED')
-            ->where('User.username', auth()->id());
+        return $this->singleRelationship(User::class, '<FAVORITED')
+            ->where('username', auth()->id());
     }
 
     public function getFavoritedAttribute(): bool
@@ -71,15 +74,18 @@ class Article extends Model
         return $this->favoritedBySelf !== null;
     }
 
-    public function getFavoriteCountAttribute(): bool
+    public function getFavoriteCountAttribute(): int
     {
         return $this->favoritedBy()->count();
     }
 
     public function getSlugOptions(): SlugOptions
     {
+        // A suffix generator makes the package check uniqueness with equality queries instead of LIKE,
+        // which the Neo4j query grammar does not support.
         return SlugOptions::create()
             ->generateSlugsFrom('title')
-            ->saveSlugsTo('slug');
+            ->saveSlugsTo('slug')
+            ->usingSuffixGenerator(static fn (string $slug, int $iteration): string => (string) ($iteration + 1));
     }
 }

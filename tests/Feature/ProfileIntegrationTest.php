@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use Illuminate\Testing\Fluent\AssertableJson;
-use Laudis\Neo4j\Basic\Session;
+use Laudis\Neo4j\Contracts\SessionInterface;
+use PHPUnit\Framework\Attributes\Depends;
 use Tests\TestCase;
 
 class ProfileIntegrationTest extends TestCase
@@ -12,20 +13,20 @@ class ProfileIntegrationTest extends TestCase
 
     public function testCreateUser(): void
     {
-        $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
+        $this->app->get(SessionInterface::class)->run('MATCH (x) DETACH DELETE x');
 
         $this->postJson('/api/users', [
             'user' => [
                 'username' => 'bob',
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
 
         $response = $this->postJson('/api/users/login', [
             'user' => [
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ],
         ]);
 
@@ -47,14 +48,12 @@ class ProfileIntegrationTest extends TestCase
             'user' => [
                 'username' => 'alice',
                 'email' => 'alice.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
     }
 
-    /**
-     * @depends testCreateUser
-     */
+    #[Depends('testCreateUser')]
     public function testFollowProfile(): void
     {
         $response = $this->postJson('/api/profiles/alice/follow', [] , ['Authorization' => self::$token]);
@@ -63,15 +62,13 @@ class ProfileIntegrationTest extends TestCase
 
         $response->assertJson(static function (AssertableJson $json) {
             $json->where('profile.username', 'alice')
-                ->where('profile.bio', '')
-                ->where('profile.image', '')
+                ->where('profile.bio', null)
+                ->where('profile.image', null)
                 ->where('profile.following', true);
         });
     }
 
-    /**
-     * @depends testFollowProfile
-     */
+    #[Depends('testFollowProfile')]
     public function testUnfollowProfile(): void
     {
         $response = $this->deleteJson('/api/profiles/alice/follow', [] , ['Authorization' => self::$token]);
@@ -80,8 +77,8 @@ class ProfileIntegrationTest extends TestCase
 
         $response->assertJson(static function (AssertableJson $json) {
             $json->where('profile.username', 'alice')
-                ->where('profile.bio', '')
-                ->where('profile.image', '')
+                ->where('profile.bio', null)
+                ->where('profile.image', null)
                 ->where('profile.following', false);
         });
     }

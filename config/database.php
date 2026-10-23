@@ -45,12 +45,10 @@ return [
 
         'neo4j' => [
             'driver' => 'neo4j',
-            'scheme' => env('DB_SCHEME', 'bolt'),
-            'host' => env('DB_HOST', 'localhost'),
-            'port' => env('DB_PORT', 7687),
-            'database' => env('DB_DATABASE', 'neo4j'),
-            'username' => env('DB_USERNAME'),
-            'password' => env('DB_PASSWORD')
+            'url' => env('NEO4J_URL', 'bolt://localhost:7687'),
+            'database' => env('NEO4J_DATABASE', 'neo4j'),
+            'username' => env('NEO4J_USERNAME', 'neo4j'),
+            'password' => env('NEO4J_PASSWORD', '')
         ],
 
         'mysql' => [
