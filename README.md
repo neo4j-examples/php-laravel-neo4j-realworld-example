@@ -27,7 +27,7 @@ The frontend can be freely chosen.
 
 Requirements:
 
-- PHP 8.3 or newer with Composer 2
+- PHP 8.3.36+, 8.4.27+ or 8.5.12+ with Composer 2. Earlier patch releases are vulnerable to CVE-2026-109618 and CVE-2026-109619, and `composer install` refuses to run on them.
 - Neo4j 5 (the included `docker-compose.yml` starts one)
 
 Copy .env.example to actual .env file

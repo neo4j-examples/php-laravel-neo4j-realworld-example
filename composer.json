@@ -5,7 +5,7 @@
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "~8.3.36 || ~8.4.27 || ^8.5.12",
         "firebase/php-jwt": "^7.0",
         "guzzlehttp/guzzle": "^7.15.2",
         "laravel/framework": "^13.30",
@@ -49,7 +49,8 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
-        ]
+        ],
+        "post-install-cmd": "@composer check-platform-reqs"
     },
     "extra": {
         "laravel": {
@@ -59,7 +60,7 @@
     "config": {
         "optimize-autoloader": true,
         "platform": {
-            "php": "8.3.0"
+            "php": "8.3.36"
         },
         "preferred-install": "dist",
         "sort-packages": true,
