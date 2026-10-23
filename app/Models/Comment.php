@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Relations\SingleRelationship;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Vinelab\NeoEloquent\Eloquent\Model;
 use const DATE_ATOM;
 
 /**
- * @property int $id
+ * @property string $id
  * @property Carbon $createdAt
  * @property Carbon $updatedAt
  * @property string $body
@@ -17,21 +16,25 @@ use const DATE_ATOM;
  * @property User $author
  * @property Article $article@
  */
-class Comment extends Model
+class Comment extends Node
 {
     use HasFactory;
+
+    public const CREATED_AT = 'createdAt';
+
+    public const UPDATED_AT = 'updatedAt';
 
     protected $dateFormat = DATE_ATOM;
 
     protected $fillable = ['body'];
 
-    public function author(): BelongsTo
+    public function author(): SingleRelationship
     {
-        return $this->belongsToRelation(User::class, 'AUTHORED');
+        return $this->singleRelationship(User::class, '<AUTHORED');
     }
 
-    public function article(): BelongsTo
+    public function article(): SingleRelationship
     {
-        return $this->belongsToRelation(Article::class, 'HAS_COMMENT');
+        return $this->singleRelationship(Article::class, '<HAS_COMMENT');
     }
 }

@@ -9,11 +9,11 @@ class CommentObserver
 {
     public function created(Comment $comment): void
     {
-        $comment->author()->associate(Auth::user());
+        $comment->author()->attach(Auth::id());
     }
 
     public function deleting(Comment $comment): void
     {
-        $comment->author()->dissociate();
+        $comment->author()->detach();
     }
 }

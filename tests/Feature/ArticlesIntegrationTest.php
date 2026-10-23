@@ -6,7 +6,8 @@ use App\Models\Article;
 use Illuminate\Support\Collection;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Testing\TestResponse;
-use Laudis\Neo4j\Basic\Session;
+use Laudis\Neo4j\Contracts\SessionInterface;
+use PHPUnit\Framework\Attributes\Depends;
 use Tests\TestCase;
 
 class ArticlesIntegrationTest extends TestCase
@@ -15,7 +16,7 @@ class ArticlesIntegrationTest extends TestCase
 
     public function testCreateUser(): void
     {
-        $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
+        $this->app->get(SessionInterface::class)->run('MATCH (x) DETACH DELETE x');
 
         $this->postJson('/api/users', [
             'user' => [
@@ -45,9 +46,7 @@ class ArticlesIntegrationTest extends TestCase
         ], ['Authorization' => self::$token])->assertStatus(200);
     }
 
-    /**
-     * @depends testCreateUser
-     */
+    #[Depends('testCreateUser')]
     public function testCreateArticle(): void
     {
         $response = $this->createTestArticle();
@@ -74,9 +73,7 @@ class ArticlesIntegrationTest extends TestCase
         });
     }
 
-    /**
-     * @depends testCreateArticle
-     */
+    #[Depends('testCreateArticle')]
     public function testGetArticle(): void
     {
         $response = $this->get('/api/articles/test-article');
@@ -103,9 +100,7 @@ class ArticlesIntegrationTest extends TestCase
         });
     }
 
-    /**
-     * @depends testCreateArticle
-     */
+    #[Depends('testCreateArticle')]
     public function testGetArticles(): void
     {
         $response = $this->get('/api/articles');
@@ -133,9 +128,7 @@ class ArticlesIntegrationTest extends TestCase
         });
     }
 
-    /**
-     * @depends testCreateArticle
-     */
+    #[Depends('testCreateArticle')]
     public function testPutArticle(): void
     {
         $response = $this->putJson('/api/articles/test-article', [
@@ -166,17 +159,13 @@ class ArticlesIntegrationTest extends TestCase
         });
     }
 
-    /**
-     * @depends testPutArticle
-     */
+    #[Depends('testPutArticle')]
     public function testPutAgain(): void
     {
         $this->testPutArticle();
     }
 
-    /**
-     * @depends testCreateArticle
-     */
+    #[Depends('testCreateArticle')]
     public function testDeleteUnauthorized(): void
     {
         $this->postJson('/api/users', [
@@ -201,9 +190,7 @@ class ArticlesIntegrationTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @depends testDeleteUnauthorized
-     */
+    #[Depends('testDeleteUnauthorized')]
     public function testDelete(): void
     {
         $response = $this->delete('/api/articles/test-article', [], ['Authorization' => self::$token]);
@@ -211,9 +198,7 @@ class ArticlesIntegrationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /**
-     * @depends testDelete
-     */
+    #[Depends('testDelete')]
     public function testGetDeleted(): void
     {
         $response = $this->get('/api/articles/test-article');
@@ -221,9 +206,7 @@ class ArticlesIntegrationTest extends TestCase
         $response->assertStatus(404);
     }
 
-    /**
-     * @depends testGetDeleted
-     */
+    #[Depends('testGetDeleted')]
     public function testMultipleCreations(): void
     {
         $response1 = $this->createTestArticle();
@@ -239,9 +222,7 @@ class ArticlesIntegrationTest extends TestCase
         self::assertEquals('test-article-4', $response5->json('article.slug'));
     }
 
-    /**
-     * @depends testGetDeleted
-     */
+    #[Depends('testGetDeleted')]
     public function testCreateOtherArticle(): void
     {
         $response = $this->postJson('/api/articles', [

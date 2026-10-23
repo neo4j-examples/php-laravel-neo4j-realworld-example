@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use Illuminate\Testing\Fluent\AssertableJson;
-use Laudis\Neo4j\Basic\Session;
+use Laudis\Neo4j\Contracts\SessionInterface;
+use PHPUnit\Framework\Attributes\Depends;
 use Tests\TestCase;
 
 class ProfileIntegrationTest extends TestCase
@@ -12,7 +13,7 @@ class ProfileIntegrationTest extends TestCase
 
     public function testCreateUser(): void
     {
-        $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
+        $this->app->get(SessionInterface::class)->run('MATCH (x) DETACH DELETE x');
 
         $this->postJson('/api/users', [
             'user' => [
@@ -52,9 +53,7 @@ class ProfileIntegrationTest extends TestCase
         ]);
     }
 
-    /**
-     * @depends testCreateUser
-     */
+    #[Depends('testCreateUser')]
     public function testFollowProfile(): void
     {
         $response = $this->postJson('/api/profiles/alice/follow', [] , ['Authorization' => self::$token]);
@@ -69,9 +68,7 @@ class ProfileIntegrationTest extends TestCase
         });
     }
 
-    /**
-     * @depends testFollowProfile
-     */
+    #[Depends('testFollowProfile')]
     public function testUnfollowProfile(): void
     {
         $response = $this->deleteJson('/api/profiles/alice/follow', [] , ['Authorization' => self::$token]);

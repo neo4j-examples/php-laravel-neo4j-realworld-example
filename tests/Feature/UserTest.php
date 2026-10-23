@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use Illuminate\Testing\Fluent\AssertableJson;
-use Laudis\Neo4j\Basic\Session;
+use Laudis\Neo4j\Contracts\SessionInterface;
+use PHPUnit\Framework\Attributes\Depends;
 use Tests\TestCase;
 
 final class UserTest extends TestCase
@@ -12,7 +13,7 @@ final class UserTest extends TestCase
 
     public function testCreateUser(): void
     {
-        $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
+        $this->app->get(SessionInterface::class)->run('MATCH (x) DETACH DELETE x');
 
         $response = $this->postJson('/api/users', [
             'user' => [
@@ -33,9 +34,7 @@ final class UserTest extends TestCase
         });
     }
 
-    /**
-     * @depends testCreateUser
-     */
+    #[Depends('testCreateUser')]
     public function testLogin(): void
     {
         $response = $this->postJson('/api/users/login', [
@@ -58,9 +57,7 @@ final class UserTest extends TestCase
         self::$token = 'Bearer ' . $response->json('user.token');
     }
 
-    /**
-     * @depends testCreateUser
-     */
+    #[Depends('testCreateUser')]
     public function testLoginInvalid(): void
     {
         $response = $this->postJson('/api/users/login', [
@@ -79,9 +76,7 @@ The user.password field is required.');
         self::$token = 'Bearer ' . $response->json('user.token');
     }
 
-    /**
-     * @depends testLogin
-     */
+    #[Depends('testLogin')]
     public function testGetUser(): void
     {
         $response = $this->getJson('/api/user', ['Authorization' => self::$token]);
@@ -99,9 +94,7 @@ The user.password field is required.');
         });
     }
 
-    /**
-     * @depends testLogin
-     */
+    #[Depends('testLogin')]
     public function testPutUser(): void
     {
         $response = $this->putJson('/api/user', [

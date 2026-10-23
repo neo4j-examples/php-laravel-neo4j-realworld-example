@@ -7,13 +7,15 @@ use App\Models\Comment;
 use App\Models\User;
 use App\Observers\ArticleObserver;
 use App\Observers\CommentObserver;
+use DomainException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
-use Laudis\Neo4j\Basic\Driver;
-use Laudis\Neo4j\Basic\Session;
+use InvalidArgumentException;
+use UnexpectedValueException;
 use function str_replace;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,10 +27,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(Session::class, static function() {
-            return Driver::create('bolt://neo4j:test@localhost')->createSession();
-        });
-
         Auth::viaRequest('jwt', static function (Request $request) {
              $token = $request->header('Authorization', null);
 
@@ -36,16 +34,17 @@ class AppServiceProvider extends ServiceProvider
                  return null;
              }
 
-             $token = (array) JWT::decode(str_replace('Bearer ', '', $token), new Key(env('APP_KEY'), 'HS256'));
+             try {
+                 $token = (array) JWT::decode(str_replace('Bearer ', '', $token), new Key(Config::get('app.key'), 'HS256'));
+             } catch (UnexpectedValueException|DomainException|InvalidArgumentException) {
+                 return null;
+             }
 
              $user = new User();
              $user->setRawAttributes((array) $token['user']);
 
              return $user;
         });
-
-        Article::observe(ArticleObserver::class);
-        Comment::observe(CommentObserver::class);
     }
 
     /**
@@ -55,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Article::observe(ArticleObserver::class);
+        Comment::observe(CommentObserver::class);
     }
 }

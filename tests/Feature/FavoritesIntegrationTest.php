@@ -4,19 +4,19 @@ namespace Tests\Feature;
 
 use Illuminate\Support\Collection;
 use Illuminate\Testing\Fluent\AssertableJson;
-use Laudis\Neo4j\Basic\Session;
+use Laudis\Neo4j\Contracts\SessionInterface;
+use PHPUnit\Framework\Attributes\Depends;
+use PHPUnit\Framework\Attributes\DoesNotPerformAssertions;
 use Tests\TestCase;
 
 class FavoritesIntegrationTest extends TestCase
 {
     private static ?string $token = null;
 
-    /**
-     * @doesNotPerformAssertions
-     */
+    #[DoesNotPerformAssertions]
     public function testFillDatabase(): void
     {
-        $this->app->get(Session::class)->run('MATCH (x) DETACH DELETE x');
+        $this->app->get(SessionInterface::class)->run('MATCH (x) DETACH DELETE x');
 
         $this->postJson('/api/users', [
             'user' => [
@@ -74,9 +74,7 @@ class FavoritesIntegrationTest extends TestCase
         ]);
     }
 
-    /**
-     * @depends testFillDatabase
-     */
+    #[Depends('testFillDatabase')]
     public function testFavorite(): void
     {
         $response = $this->postJson('/api/articles/test-article/favorite', [], ['Authorization' => self::$token]);
@@ -104,9 +102,7 @@ class FavoritesIntegrationTest extends TestCase
         });
     }
 
-    /**
-     * @depends testFillDatabase
-     */
+    #[Depends('testFillDatabase')]
     public function testUnfavorite(): void
     {
         $response = $this->deleteJson('/api/articles/test-article/favorite', [], ['Authorization' => self::$token]);
