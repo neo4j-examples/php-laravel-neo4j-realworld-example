@@ -7,7 +7,7 @@
     "require": {
         "php": "~8.3.36 || ~8.4.27 || ^8.5.12",
         "firebase/php-jwt": "^7.0",
-        "guzzlehttp/guzzle": "^7.15.2",
+        "guzzlehttp/guzzle": "^8.3.0",
         "laravel/framework": "^13.30",
         "laravel/sanctum": "^4.3.1",
         "laravel/tinker": "^3.0",
