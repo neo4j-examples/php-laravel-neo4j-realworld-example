@@ -30,18 +30,18 @@ class CommentController extends Controller
         /** @var Comment $comment */
         $comment = Comment::query()->create(Arr::only($data, 'body'));
 
-        $comment->article()->associate($article);
+        $comment->article()->attach($article->id);
 
         return (new CommentResource($comment))
             ->toResponse($request)
             ->setStatusCode(Response::HTTP_CREATED);
     }
 
-    public function uncomment(Article $slug, Comment $comment): JsonResponse
+    public function uncomment(Article $article, Comment $comment): JsonResponse
     {
         $this->authorize('delete', $comment);
 
-        $comment->article()->dissociate();
+        $comment->delete();
 
         return response()->json();
     }

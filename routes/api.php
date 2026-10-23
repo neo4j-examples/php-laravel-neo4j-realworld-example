@@ -25,11 +25,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::controller(ArticleController::class)->group(function () {
     Route::delete('/articles/feed', 'listArticles');
-    Route::get('/articles', 'queryArticles')->middleware('auth');
+    Route::get('/articles', 'queryArticles');
     Route::post('/articles', 'createArticle')->middleware('auth');
-    Route::get('/articles/{slug}', 'getArticle');
-    Route::put('/articles/{slug}', 'updateArticle')->middleware('auth');
-    Route::delete('/articles/{slug}', 'deleteArticle')->middleware('auth');
+    Route::get('/articles/{article}', 'getArticle');
+    Route::put('/articles/{article}', 'updateArticle')->middleware('auth');
+    Route::delete('/articles/{article}', 'deleteArticle')->middleware('auth');
 });
 
 Route::controller(UserController::class)->group(function () {
@@ -40,20 +40,20 @@ Route::controller(UserController::class)->group(function () {
 });
 
 Route::controller(ProfileController::class)->group(function () {
-    Route::get('/profiles/{username}', 'getProfile');
-    Route::post('/profiles/{username}/follow', 'followProfile')->middleware('auth');
-    Route::delete('/profiles/{username}/follow', 'unfollowProfile')->middleware('auth');
+    Route::get('/profiles/{user}', 'getProfile');
+    Route::post('/profiles/{user}/follow', 'followProfile')->middleware('auth');
+    Route::delete('/profiles/{user}/follow', 'unfollowProfile')->middleware('auth');
 });
 
 Route::controller(CommentController::class)->group(function () {
-    Route::get('/articles/{slug}/comments', 'getComments');
-    Route::post('/articles/{slug}/comments', 'comment')->middleware('auth');
-    Route::delete('/articles/{slug}/comments/{id}', 'uncomment')->middleware('auth');
+    Route::get('/articles/{article}/comments', 'getComments');
+    Route::post('/articles/{article}/comments', 'comment')->middleware('auth');
+    Route::delete('/articles/{article}/comments/{comment}', 'uncomment')->middleware('auth');
 });
 
 Route::controller(FavoriteController::class)->group(function () {
-    Route::post('/articles/{slug}/favorite', 'favorite')->middleware('auth');
-    Route::delete('/articles/{slug}/favorite', 'unfavorite')->middleware('auth');
+    Route::post('/articles/{article}/favorite', 'favorite')->middleware('auth');
+    Route::delete('/articles/{article}/favorite', 'unfavorite')->middleware('auth');
 });
 
 // todo - create tag feed

@@ -172,14 +172,14 @@ class ArticlesIntegrationTest extends TestCase
             'user' => [
                 'username' => 'bob2',
                 'email' => 'bob.ross2@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
 
         $response = $this->postJson('/api/users/login', [
             'user' => [
                 'email' => 'bob.ross2@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ],
         ]);
 

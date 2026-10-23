@@ -22,14 +22,14 @@ class FavoritesIntegrationTest extends TestCase
             'user' => [
                 'username' => 'bob',
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
 
         $response = $this->postJson('/api/users/login', [
             'user' => [
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ],
         ]);
 

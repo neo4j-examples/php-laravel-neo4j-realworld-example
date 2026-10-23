@@ -13,6 +13,8 @@ class CommentIntegrationTest extends TestCase
 {
     private static ?string $token = null;
 
+    private static ?string $commentId = null;
+
     #[DoesNotPerformAssertions]
     public function testFillDatabase(): void
     {
@@ -22,14 +24,14 @@ class CommentIntegrationTest extends TestCase
             'user' => [
                 'username' => 'bob',
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
 
         $response = $this->postJson('/api/users/login', [
             'user' => [
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ],
         ]);
 
@@ -79,10 +81,10 @@ class CommentIntegrationTest extends TestCase
     {
         $response = $this->postJson('/api/articles/test-article/comments', ['comment' => ['body' => 'Great blog post!']], ['Authorization' => self::$token]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(201);
 
         $response->assertJson(static function (AssertableJson $json) {
-            $json->where('comment.id', 0)
+            $json->whereType('comment.id', 'string')
                 ->whereType('comment.createdAt', 'string')
                 ->whereType('comment.updatedAt', 'string')
                 ->where('comment.body', 'Great blog post!')
@@ -91,12 +93,14 @@ class CommentIntegrationTest extends TestCase
                 ->where('comment.author.image', '/bob.png')
                 ->where('comment.author.following', false);
         });
+
+        self::$commentId = $response->json('comment.id');
     }
 
     #[Depends('testComment')]
     public function testUncomment(): void
     {
-        $response = $this->deleteJson('/api/articles/test-article/comments/0', [], ['Authorization' => self::$token]);
+        $response = $this->deleteJson('/api/articles/test-article/comments/' . self::$commentId, [], ['Authorization' => self::$token]);
 
         $response->assertStatus(200);
     }

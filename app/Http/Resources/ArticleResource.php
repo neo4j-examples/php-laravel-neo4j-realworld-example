@@ -20,11 +20,11 @@ class ArticleResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'body' => $this->body,
-            'tagList' => TagResource::collection($this->tags),
+            'tagList' => $this->tags->pluck('name'),
             'createdAt' => $this->createdAt,
             'updatedAt' => $this->updatedAt,
             'favorited' => $this->favorited,
-            'favoriteCount' => $this->favoriteCount,
+            'favoritesCount' => $this->favoriteCount,
             'author' => new ProfileResource($this->author),
         ];
     }

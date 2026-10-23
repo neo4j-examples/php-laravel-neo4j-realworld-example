@@ -2,64 +2,63 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ArticleCollection;
 use App\Http\Resources\ArticleResource;
 use App\Models\Article;
 use App\Models\Tag;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Arr;
-use function auth;
+use function intdiv;
 use function response;
 
 class ArticleController extends Controller
 {
-    public function listArticles(Request $request): ResourceCollection
+    public function listArticles(Request $request): ArticleCollection
     {
         $request->validate([
-            'limit' => 'optional|numeric|min:1|max:200',
-            'offset' => 'optional|numeric|min:0'
+            'limit' => 'sometimes|numeric|min:1|max:200',
+            'offset' => 'sometimes|numeric|min:0'
         ]);
 
-        $perPage = $request->query('limit', 20);
-        $page = (int)($request->query('offset', 0) / $perPage);
+        $perPage = (int) $request->query('limit', 20);
+        $page = intdiv((int) $request->query('offset', 0), $perPage) + 1;
 
 
         $pagination = Article::query()
             ->with(['tags', 'author', 'favoritedBy', 'favoritedBySelf'])
             ->paginate(perPage: $perPage, page: $page);
 
-        return ArticleResource::collection($pagination);
+        return new ArticleCollection($pagination);
     }
 
-    public function queryArticles(Request $request): ResourceCollection
+    public function queryArticles(Request $request): ArticleCollection
     {
         $request->validate([
-            'limit' => 'optional|numeric|min:1|max:200',
-            'offset' => 'optional|numeric|min:0'
+            'limit' => 'sometimes|numeric|min:1|max:200',
+            'offset' => 'sometimes|numeric|min:0'
         ]);
 
         $query = Article::query()->with(['tags', 'author', 'favoritedBy', 'favoritedBySelf']);
 
         if ($request->has('tag')) {
-            $query->whereRelation('tags', 'name', $request->get('tag'));
+            $query->matchRelationship('<TAGGED', 'Tag', 'tagged', 'tag', static fn ($q) => $q->where('name', $request->get('tag')));
         }
 
         if ($request->has('author')) {
-            $query->whereRelation('tags', 'username', $request->get('author'));
+            $query->matchRelationship('<AUTHORED', 'User', 'authored', 'author', static fn ($q) => $q->where('username', $request->get('author')));
         }
 
         if ($request->has('favorited')) {
-            $query->whereRelation('favoritedBy', 'username', $request->get('favorited'));
+            $query->matchRelationship('<FAVORITED', 'User', 'favorite', 'favoriter', static fn ($q) => $q->where('username', $request->get('favorited')));
         }
 
-        $perPage = $request->query('limit', 20);
-        $page = (int)($request->query('offset', 0) / $perPage);
+        $perPage = (int) $request->query('limit', 20);
+        $page = intdiv((int) $request->query('offset', 0), $perPage) + 1;
 
         $pagination = $query->paginate(perPage: $perPage, page: $page);
 
-        return ArticleResource::collection($pagination);
+        return new ArticleCollection($pagination);
     }
 
     public function getArticle(Article $article): ArticleResource
@@ -81,12 +80,10 @@ class ArticleController extends Controller
         /** @var Article $model */
         $model = Article::query()->create($params);
 
-        $model->author()->associate(auth()->id());
-        // updateOrCreate uses MERGE under the hood.
-        $tags = collect($params['tagList'])
-            ->map(static fn(string $x) => Tag::query()->updateOrCreate(['name' => $x]));
+        $tags = collect($params['tagList'] ?? [])
+            ->map(static fn(string $x) => Tag::query()->firstOrCreate(['name' => $x]));
 
-//        $model->tags()->saveMany($tags);
+        $model->tags()->attach($tags->pluck('id')->all());
 
         return (new ArticleResource($model))
             ->toResponse($request)
@@ -97,7 +94,7 @@ class ArticleController extends Controller
     {
         $this->authorize('delete', $article);
 
-        Article::destroy($article->slug);
+        $article->delete();
 
         return response()->json();
     }
@@ -105,14 +102,14 @@ class ArticleController extends Controller
     public function updateArticle(Request $request, Article $article): ArticleResource
     {
         $request->validate([
-            'article.title' => 'optional|string|min:5|max:150',
-            'article.description' => 'optional|string|min:0|max:255',
-            'article.body' => 'optional|string|min:5|max:50000'
+            'article.title' => 'sometimes|string|min:5|max:150',
+            'article.description' => 'sometimes|string|min:0|max:255',
+            'article.body' => 'sometimes|string|min:5|max:50000'
         ]);
 
         $this->authorize('update', $article);
 
-        $parameters = $request->json('article')?->all();
+        $parameters = $request->json('article', []);
 
         $article->update(Arr::only($parameters, ['description', 'body', 'title']));
 

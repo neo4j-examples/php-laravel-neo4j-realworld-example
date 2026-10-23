@@ -19,14 +19,14 @@ class ProfileIntegrationTest extends TestCase
             'user' => [
                 'username' => 'bob',
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
 
         $response = $this->postJson('/api/users/login', [
             'user' => [
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ],
         ]);
 
@@ -48,7 +48,7 @@ class ProfileIntegrationTest extends TestCase
             'user' => [
                 'username' => 'alice',
                 'email' => 'alice.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
     }
@@ -62,8 +62,8 @@ class ProfileIntegrationTest extends TestCase
 
         $response->assertJson(static function (AssertableJson $json) {
             $json->where('profile.username', 'alice')
-                ->where('profile.bio', '')
-                ->where('profile.image', '')
+                ->where('profile.bio', null)
+                ->where('profile.image', null)
                 ->where('profile.following', true);
         });
     }
@@ -77,8 +77,8 @@ class ProfileIntegrationTest extends TestCase
 
         $response->assertJson(static function (AssertableJson $json) {
             $json->where('profile.username', 'alice')
-                ->where('profile.bio', '')
-                ->where('profile.image', '')
+                ->where('profile.bio', null)
+                ->where('profile.image', null)
                 ->where('profile.following', false);
         });
     }

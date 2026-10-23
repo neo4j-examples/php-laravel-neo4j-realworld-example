@@ -19,7 +19,7 @@ final class UserTest extends TestCase
             'user' => [
                 'username' => 'bob',
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ]
         ]);
 
@@ -29,8 +29,8 @@ final class UserTest extends TestCase
             $json->where('user.email', 'bob.ross@gmail.com')
                 ->has('user.token')
                 ->where('user.username', 'bob')
-                ->where('user.bio', '')
-                ->where('user.image', '');
+                ->where('user.bio', null)
+                ->where('user.image', null);
         });
     }
 
@@ -40,7 +40,7 @@ final class UserTest extends TestCase
         $response = $this->postJson('/api/users/login', [
             'user' => [
                 'email' => 'bob.ross@gmail.com',
-                'password' => '123456'
+                'password' => '1erz23456aB@'
             ],
         ]);
 
@@ -50,8 +50,8 @@ final class UserTest extends TestCase
             $json->where('user.email', 'bob.ross@gmail.com')
                 ->has('user.token')
                 ->where('user.username', 'bob')
-                ->where('user.bio', '')
-                ->where('user.image', '');
+                ->where('user.bio', null)
+                ->where('user.image', null);
         });
 
         self::$token = 'Bearer ' . $response->json('user.token');
@@ -72,8 +72,6 @@ final class UserTest extends TestCase
             $json->where('errors.body', 'The user.email must be a valid email address.
 The user.password field is required.');
         });
-
-        self::$token = 'Bearer ' . $response->json('user.token');
     }
 
     #[Depends('testLogin')]
@@ -87,8 +85,8 @@ The user.password field is required.');
             $json->where('user.email', 'bob.ross@gmail.com')
                 ->has('user.token')
                 ->where('user.username', 'bob')
-                ->where('user.bio', '')
-                ->where('user.image', '');
+                ->where('user.bio', null)
+                ->where('user.image', null);
 
             self::assertNotEquals($json->toArray()['user']['token'], self::$token);
         });
