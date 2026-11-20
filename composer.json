@@ -12,7 +12,7 @@
         "laravel/sanctum": "^4.3.1",
         "laravel/tinker": "^3.0",
         "laudis/neo4j-php-client": "^3.7",
-        "neo4j-php/neo4j-laravel": "^0.0.1",
+        "neo4j-php/neo4j-laravel": "^0.0.2",
         "spatie/laravel-sluggable": "^4.0",
         "wikibase-solutions/php-cypher-dsl": "^5.0"
     },
